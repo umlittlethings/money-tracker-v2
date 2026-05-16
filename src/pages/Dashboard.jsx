@@ -5,14 +5,10 @@ import EditExpenseModal from '../components/EditExpenseModal';
 import AdjustBalanceModal from '../components/AdjustBalanceModal';
 
 const Dashboard = () => {
-  const { profile, transactions, initializeData, gamification } = useStore();
+  const { profile, transactions } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
-
-  useEffect(() => {
-    initializeData();
-  }, [initializeData]);
 
   const today = new Date().toISOString().split('T')[0];
   
@@ -55,7 +51,7 @@ const Dashboard = () => {
           <h1 className="text-2xl font-bold">{profile.name}</h1>
         </div>
         <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary text-primary font-bold">
-          {gamification.level === 'Disciplined Saver' ? 'DS' : 'MF'}
+          {profile.level === 'Disciplined Saver' ? 'DS' : 'BS'}
         </div>
       </header>
 

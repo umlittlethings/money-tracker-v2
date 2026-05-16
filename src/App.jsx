@@ -6,10 +6,15 @@ import Calendar from './pages/Calendar';
 import Analytics from './pages/Analytics';
 import Goals from './pages/Goals';
 import Settings from './pages/Settings';
+import Auth from './pages/Auth';
 import useStore from './store/useStore';
 
 function App() {
-  const { settings } = useStore();
+  const { settings, user, isLoading, initializeAuth } = useStore();
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   useEffect(() => {
     if (settings.darkMode) {
@@ -18,6 +23,19 @@ function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [settings.darkMode]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center p-4">
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-primary font-bold text-xl">Loading MoneyFlow...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
 
   return (
     <BrowserRouter>

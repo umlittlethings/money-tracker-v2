@@ -3,7 +3,7 @@ import useStore from '../store/useStore';
 import EditProfileModal from '../components/EditProfileModal';
 
 const Settings = () => {
-  const { profile, settings, toggleDarkMode } = useStore();
+  const { profile, settings, toggleDarkMode, signOut } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
 
   return (
@@ -47,6 +47,13 @@ const Settings = () => {
             </button>
           </div>
         </div>
+
+        <button 
+          onClick={signOut}
+          className="w-full py-4 mt-6 bg-expense/10 text-expense font-bold rounded-2xl hover:bg-expense/20 transition-colors"
+        >
+          Log Out
+        </button>
       </div>
       
       {/* Edit Profile Modal */}
