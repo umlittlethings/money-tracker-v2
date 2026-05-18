@@ -21,11 +21,14 @@ const Settings = () => {
   const hideBalance = settings.hideBalance;
 
   return (
-    <div className="p-4 pt-10">
+    <div className="p-4 pt-10 md:p-8 max-w-7xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       
-      <div className="space-y-6">
-        <div className="glass-card rounded-2xl p-4">
+      <div className="md:grid md:grid-cols-2 md:gap-6 space-y-6 md:space-y-0">
+        
+        {/* Left Column (Desktop) */}
+        <div className="space-y-6">
+          <div className="glass-card rounded-2xl p-4">
           <h3 className="font-bold text-lg mb-4 border-b border-gray-800 pb-2">Profile</h3>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between">
@@ -71,6 +74,32 @@ const Settings = () => {
             </button>
           </div>
         </div>
+        
+        <div className="glass-card rounded-2xl p-4">
+          <h3 className="font-bold text-lg mb-4 border-b border-gray-800 pb-2">System History Logs</h3>
+          <div className="space-y-3 text-sm max-h-64 overflow-y-auto no-scrollbar pr-2">
+            {!transactions || transactions.filter(t => t.category === 'System').length === 0 ? (
+              <p className="text-gray-500 text-center py-2">No system logs yet.</p>
+            ) : (
+              transactions.filter(t => t.category === 'System').slice(0, 20).map((t, idx) => (
+                <div key={t.id || `sys-${idx}`} className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl">
+                  <div>
+                    <p className="font-medium text-gray-300">{t.note}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {t.date ? new Date(t.date).toLocaleDateString('id-ID') : 'Unknown'} • Wallet: {t.wallet}
+                    </p>
+                  </div>
+                  <span className="font-bold text-gray-400">Rp {formatMoney(t.amount, hideBalance)}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        </div> {/* End Left Column */}
+
+        {/* Right Column (Desktop) */}
+        <div className="space-y-6">
 
         <div className="glass-card rounded-2xl p-4">
           <div className="flex justify-between items-end mb-4 border-b border-gray-800 pb-2">
@@ -240,35 +269,17 @@ const Settings = () => {
             )}
           </div>
         </div>
+        
+        </div> {/* End Right Column */}
 
-        <div className="glass-card rounded-2xl p-4">
-          <h3 className="font-bold text-lg mb-4 border-b border-gray-800 pb-2">System History Logs</h3>
-          <div className="space-y-3 text-sm max-h-64 overflow-y-auto no-scrollbar pr-2">
-            {!transactions || transactions.filter(t => t.category === 'System').length === 0 ? (
-              <p className="text-gray-500 text-center py-2">No system logs yet.</p>
-            ) : (
-              transactions.filter(t => t.category === 'System').slice(0, 20).map(t => (
-                <div key={t.id || Math.random()} className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl">
-                  <div>
-                    <p className="font-medium text-gray-300">{t.note}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {t.date ? new Date(t.date).toLocaleDateString('id-ID') : 'Unknown'} • Wallet: {t.wallet}
-                    </p>
-                  </div>
-                  <span className="font-bold text-gray-400">Rp {formatMoney(t.amount, hideBalance)}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+      </div> {/* End Grid */}
 
-        <button 
-          onClick={signOut}
-          className="w-full py-4 mt-6 bg-expense/10 text-expense font-bold rounded-2xl hover:bg-expense/20 transition-colors"
-        >
-          Log Out
-        </button>
-      </div>
+      <button 
+        onClick={signOut}
+        className="w-full py-4 mt-6 bg-expense/10 text-expense font-bold rounded-2xl hover:bg-expense/20 transition-colors"
+      >
+        Log Out
+      </button>
       
       {/* Edit Profile Modal */}
       <EditProfileModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} />
