@@ -243,15 +243,17 @@ const Settings = () => {
 
         <div className="glass-card rounded-2xl p-4">
           <h3 className="font-bold text-lg mb-4 border-b border-gray-800 pb-2">System History Logs</h3>
-          <div className="space-y-3 text-sm">
-            {transactions.filter(t => t.category === 'System').slice(0, 5).length === 0 ? (
+          <div className="space-y-3 text-sm max-h-64 overflow-y-auto no-scrollbar pr-2">
+            {!transactions || transactions.filter(t => t.category === 'System').length === 0 ? (
               <p className="text-gray-500 text-center py-2">No system logs yet.</p>
             ) : (
-              transactions.filter(t => t.category === 'System').slice(0, 5).map(t => (
-                <div key={t.id} className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl">
+              transactions.filter(t => t.category === 'System').slice(0, 20).map(t => (
+                <div key={t.id || Math.random()} className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl">
                   <div>
                     <p className="font-medium text-gray-300">{t.note}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{new Date(t.date).toLocaleDateString('id-ID')} • Wallet: {t.wallet}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {t.date ? new Date(t.date).toLocaleDateString('id-ID') : 'Unknown'} • Wallet: {t.wallet}
+                    </p>
                   </div>
                   <span className="font-bold text-gray-400">Rp {formatMoney(t.amount, hideBalance)}</span>
                 </div>
