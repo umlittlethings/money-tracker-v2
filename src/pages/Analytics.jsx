@@ -4,7 +4,9 @@ import useStore from '../store/useStore';
 const Analytics = () => {
   const { transactions } = useStore();
 
-  const categoryTotals = transactions.reduce((acc, curr) => {
+  const validTransactions = transactions.filter(t => t.category !== 'System');
+
+  const categoryTotals = validTransactions.reduce((acc, curr) => {
     acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
     return acc;
   }, {});

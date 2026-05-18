@@ -10,7 +10,31 @@ import Auth from './pages/Auth';
 import useStore from './store/useStore';
 
 function App() {
-  const { settings, user, isLoading, initializeAuth } = useStore();
+  const { settings, user, isLoading, initializeAuth, signOut } = useStore();
+
+  // Security: Auto Logout on 15 minutes idle
+  useEffect(() => {
+    if (!user) return;
+    
+    let timeoutId;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      // 15 minutes = 900,000 ms
+      timeoutId = setTimeout(() => {
+        signOut();
+        alert('Demi keamanan, kamu telah otomatis log out karena tidak ada aktivitas selama 15 menit.');
+      }, 900000); 
+    };
+
+    const events = ['mousemove', 'keydown', 'scroll', 'click'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+      clearTimeout(timeoutId);
+    };
+  }, [user, signOut]);
 
   useEffect(() => {
     initializeAuth();

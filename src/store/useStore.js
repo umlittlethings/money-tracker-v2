@@ -18,8 +18,93 @@ const useStore = create((set, get) => ({
   profile: defaultProfile,
   transactions: [],
   goals: [],
+  wallets: [{ name: 'Cash', balance: 0 }],
   settings: { darkMode: true },
   isLoading: true,
+  
+  addWallet: async (walletName, initialBalance = 0, type = 'daily') => {
+    const user = get().user;
+    if (!user) return;
+    
+    const currentWallets = get().wallets;
+    if (currentWallets.some(w => w.name === walletName)) return;
+    
+    const newWallets = [...currentWallets, { name: walletName, balance: initialBalance, type }];
+    set({ wallets: newWallets });
+    
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
+  },
+  
+  updateWalletBalance: async (walletName, newBalance) => {
+    const user = get().user;
+    if (!user) return;
+    const newWallets = get().wallets.map(w => w.name === walletName ? { ...w, balance: newBalance } : w);
+    set({ wallets: newWallets });
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
+  },
+  
+  deleteWallet: async (walletName) => {
+    const user = get().user;
+    if (!user) return;
+    
+    const currentWallets = get().wallets;
+    const newWallets = currentWallets.filter(w => w.name !== walletName);
+    set({ wallets: newWallets });
+    
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
+  },
+
+  toggleWalletType: async (walletName) => {
+    const user = get().user;
+    if (!user) return;
+    
+    const currentWallets = get().wallets;
+    const newWallets = currentWallets.map(w => 
+      w.name === walletName ? { ...w, type: w.type === 'savings' ? 'daily' : 'savings' } : w
+    );
+    set({ wallets: newWallets });
+    
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
+  },
+
+  transferWalletBalance: async (fromName, toName, amount) => {
+    const user = get().user;
+    if (!user) return;
+    
+    const newWallets = get().wallets.map(w => {
+      if (w.name === fromName) return { ...w, balance: w.balance - amount };
+      if (w.name === toName) return { ...w, balance: w.balance + amount };
+      return w;
+    });
+
+    // Create system transaction for log
+    const optimisticId = Math.random().toString();
+    const systemTx = {
+      id: optimisticId,
+      user_id: user.id,
+      amount: amount,
+      category: 'System',
+      note: `Transfer: ${fromName} ➔ ${toName}`,
+      wallet: fromName,
+      date: new Date().toISOString()
+    };
+
+    set((state) => ({
+      wallets: newWallets,
+      transactions: [systemTx, ...state.transactions]
+    }));
+
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
+    
+    // We only need a single tx for the log, inserting without returning since it's just a log
+    await supabase.from('transactions').insert([{
+      user_id: user.id,
+      amount: amount,
+      category: 'System',
+      note: systemTx.note,
+      wallet: fromName
+    }]);
+  },
 
   initializeAuth: () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -45,22 +130,30 @@ const useStore = create((set, get) => ({
     // Fetch Profile
     const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     if (profile) {
-      set({ profile: {
-        name: profile.name || '',
-        monthlyIncome: profile.monthly_income,
-        savingsTarget: profile.savings_target,
-        churchTithe: profile.church_tithe,
-        dailyBudget: profile.daily_budget,
-        payday: profile.payday,
-        streak: profile.streak,
-        totalXp: profile.total_xp,
-        level: profile.level
-      } });
+      set({ 
+        profile: {
+          name: profile.name || '',
+          monthlyIncome: profile.monthly_income,
+          savingsTarget: profile.savings_target,
+          churchTithe: profile.church_tithe,
+          dailyBudget: profile.daily_budget,
+          payday: profile.payday,
+          streak: profile.streak,
+          totalXp: profile.total_xp,
+          level: profile.level
+        },
+        wallets: (profile.wallets || [{ name: 'Cash', balance: 0, type: 'daily' }]).map(w => {
+          if (typeof w === 'string') return { name: w, balance: 0, type: 'daily' };
+          return { ...w, type: w.type || 'daily' };
+        })
+      });
     }
 
     // Fetch Transactions
     const { data: transactions } = await supabase.from('transactions').select('*').order('date', { ascending: false });
-    if (transactions) set({ transactions });
+    if (transactions) {
+      set({ transactions: transactions.map(t => ({...t, wallet: t.wallet || 'Cash'})) });
+    }
 
     // Fetch Goals
     const { data: goals } = await supabase.from('goals').select('*').order('target_date', { ascending: true });
@@ -109,40 +202,73 @@ const useStore = create((set, get) => ({
       amount: transaction.amount,
       category: transaction.category,
       note: transaction.note || '',
+      wallet: transaction.wallet || 'Cash'
     };
 
     const optimisticId = Math.random().toString();
+    
+    // Deduct from wallet balance
+    const newWallets = get().wallets.map(w => w.name === newTx.wallet ? { ...w, balance: w.balance - newTx.amount } : w);
+
     set((state) => ({
+      wallets: newWallets,
       transactions: [{ id: optimisticId, ...newTx, date: new Date().toISOString() }, ...state.transactions]
     }));
 
+    // Update DB
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
     const { data, error } = await supabase.from('transactions').insert([newTx]).select().single();
     if (!error && data) {
       set((state) => ({
-        transactions: state.transactions.map(t => t.id === optimisticId ? data : t)
+        transactions: state.transactions.map(t => t.id === optimisticId ? { ...data, wallet: data.wallet || 'Cash' } : t)
       }));
     }
   },
 
   updateTransaction: async (id, updatedData) => {
+    const user = get().user;
+    const oldTx = get().transactions.find(t => t.id === id);
+    if (!oldTx) return;
+
+    let newWallets = [...get().wallets];
+    
+    // Refund old
+    newWallets = newWallets.map(w => w.name === oldTx.wallet ? { ...w, balance: w.balance + oldTx.amount } : w);
+    
+    // Deduct new
+    const newWalletName = updatedData.wallet || oldTx.wallet;
+    const newAmount = updatedData.amount || oldTx.amount;
+    newWallets = newWallets.map(w => w.name === newWalletName ? { ...w, balance: w.balance - newAmount } : w);
+
     // Optimistic Update
     set((state) => ({
+      wallets: newWallets,
       transactions: state.transactions.map(t => t.id === id ? { ...t, ...updatedData } : t)
     }));
 
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user?.id);
     await supabase.from('transactions').update({
       amount: updatedData.amount,
       category: updatedData.category,
-      note: updatedData.note
+      note: updatedData.note,
+      wallet: updatedData.wallet
     }).eq('id', id);
   },
 
   deleteTransaction: async (id) => {
+    const user = get().user;
+    const oldTx = get().transactions.find(t => t.id === id);
+    if (!oldTx) return;
+
+    const newWallets = get().wallets.map(w => w.name === oldTx.wallet ? { ...w, balance: w.balance + oldTx.amount } : w);
+
     // Optimistic Update
     set((state) => ({
+      wallets: newWallets,
       transactions: state.transactions.filter(t => t.id !== id)
     }));
 
+    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user?.id);
     await supabase.from('transactions').delete().eq('id', id);
   },
 
@@ -158,7 +284,8 @@ const useStore = create((set, get) => ({
       name: goal.name,
       target: goal.target,
       current: goal.current || 0,
-      target_date: goal.date
+      target_date: goal.date,
+      linked_wallet: goal.linkedWallet || null
     };
 
     const optimisticId = Math.random().toString();
@@ -180,6 +307,7 @@ const useStore = create((set, get) => ({
     if (updatedData.target !== undefined) dbUpdates.target = updatedData.target;
     if (updatedData.current !== undefined) dbUpdates.current = updatedData.current;
     if (updatedData.date !== undefined) dbUpdates.target_date = updatedData.date;
+    if (updatedData.linkedWallet !== undefined) dbUpdates.linked_wallet = updatedData.linkedWallet;
 
     // Optimistic Update
     set((state) => ({

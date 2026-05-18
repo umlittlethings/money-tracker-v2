@@ -7,9 +7,11 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [note, setNote] = useState('');
+  const [wallet, setWallet] = useState('Cash');
+  const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  const { updateTransaction, deleteTransaction } = useStore();
+  const { updateTransaction, deleteTransaction, wallets } = useStore();
 
   const categories = ['Food', 'Coffee', 'Transport', 'Gaming', 'Shopping', 'Bills', 'Church', 'Other'];
 
@@ -18,6 +20,7 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
       setAmount(transaction.amount.toString());
       setCategory(transaction.category || 'Food');
       setNote(transaction.note || '');
+      setWallet(transaction.wallet || 'Cash');
       setShowDeleteConfirm(false);
     }
   }, [transaction, isOpen]);
@@ -26,11 +29,28 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
     e.preventDefault();
     if (!amount || !transaction) return;
     
+    const parsedAmount = parseInt(amount);
+    const selectedWallet = wallets.find(w => w.name === wallet);
+    
+    // Calculate effective balance for validation:
+    // If wallet hasn't changed, effective balance = current balance + old expense amount
+    // If wallet changed, effective balance = new wallet's current balance
+    const effectiveBalance = (wallet === transaction.wallet) 
+      ? (selectedWallet?.balance || 0) + transaction.amount 
+      : (selectedWallet?.balance || 0);
+
+    if (selectedWallet && parsedAmount > effectiveBalance) {
+      setError(`Insufficient balance in ${wallet}. Available: Rp ${effectiveBalance.toLocaleString('id-ID')}.`);
+      return;
+    }
+    
     updateTransaction(transaction.id, {
-      amount: parseInt(amount),
+      amount: parsedAmount,
       category,
-      note
+      note,
+      wallet
     });
+    setError('');
     onClose();
   };
 
@@ -62,12 +82,21 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-expense/10 text-expense p-3 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
+          
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">Amount (Rp)</label>
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setError('');
+              }}
               className="w-full bg-background border border-gray-800 rounded-2xl px-4 py-4 text-2xl font-bold text-center focus:outline-none focus:border-primary transition-colors"
               placeholder="0"
               autoFocus
@@ -87,6 +116,27 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
                   }`}
                 >
                   {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Wallet</label>
+            <div className="flex flex-wrap gap-2">
+              {wallets.map(w => (
+                <button
+                  key={w.name}
+                  type="button"
+                  onClick={() => {
+                    setWallet(w.name);
+                    setError('');
+                  }}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    wallet === w.name ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {w.name}
                 </button>
               ))}
             </div>

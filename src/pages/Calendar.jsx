@@ -79,7 +79,7 @@ const Calendar = () => {
         
         // Calculate total expense for this day
         const dayString = format(day, 'yyyy-MM-dd');
-        const dayTransactions = transactions.filter(t => t.date.startsWith(dayString));
+        const dayTransactions = transactions.filter(t => t.date.startsWith(dayString) && t.category !== 'System');
         const dayTotal = dayTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
         // Determine background color based on spending intensity
@@ -123,7 +123,7 @@ const Calendar = () => {
 
   const renderSelectedDayExpenses = () => {
     const dayString = format(selectedDate, 'yyyy-MM-dd');
-    const dayTransactions = transactions.filter(t => t.date.startsWith(dayString));
+    const dayTransactions = transactions.filter(t => t.date.startsWith(dayString) && t.category !== 'System');
     const dayTotal = dayTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
     return (
@@ -155,8 +155,13 @@ const Calendar = () => {
                     {t.category === 'Food' ? '🍔' : t.category === 'Coffee' ? '☕' : '💸'}
                   </div>
                   <div>
-                    <p className="font-semibold">{t.category}</p>
-                    {t.note && <p className="text-xs text-gray-400">{t.note}</p>}
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{t.category}</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-300 font-medium">
+                        {t.wallet || 'Cash'}
+                      </span>
+                    </div>
+                    {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
                   </div>
                 </div>
                 <p className="font-bold text-expense">-Rp {t.amount.toLocaleString('id-ID')}</p>

@@ -24,7 +24,10 @@ const Goals = () => {
 
       <div className="space-y-4">
         {goals.map(goal => {
-          const progress = Math.min(100, Math.round((goal.current / goal.target) * 100));
+          const linkedWalletObj = goal.linked_wallet ? useStore.getState().wallets.find(w => w.name === goal.linked_wallet) : null;
+          const currentAmount = linkedWalletObj ? linkedWalletObj.balance : goal.current;
+          const progress = Math.min(100, Math.round((currentAmount / goal.target) * 100));
+          
           return (
             <div 
               key={goal.id} 
@@ -48,7 +51,7 @@ const Goals = () => {
               </div>
               
               <div className="flex justify-between mt-3 text-xs">
-                <span className="text-gray-400">Rp {goal.current.toLocaleString('id-ID')}</span>
+                <span className="text-gray-400">Rp {currentAmount.toLocaleString('id-ID')}</span>
                 <span className="text-gray-400">Rp {goal.target.toLocaleString('id-ID')}</span>
               </div>
             </div>

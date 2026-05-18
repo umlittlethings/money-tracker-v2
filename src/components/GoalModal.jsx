@@ -8,9 +8,10 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
   const [target, setTarget] = useState('');
   const [current, setCurrent] = useState('');
   const [date, setDate] = useState('');
+  const [linkedWallet, setLinkedWallet] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  const { addGoal, updateGoal, deleteGoal } = useStore();
+  const { addGoal, updateGoal, deleteGoal, wallets } = useStore();
 
   useEffect(() => {
     if (isOpen) {
@@ -19,11 +20,13 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
         setTarget(existingGoal.target.toString());
         setCurrent(existingGoal.current.toString());
         setDate(existingGoal.date);
+        setLinkedWallet(existingGoal.linked_wallet || '');
       } else {
         setName('');
         setTarget('');
         setCurrent('');
         setDate(new Date().toISOString().split('T')[0]);
+        setLinkedWallet('');
       }
       setShowDeleteConfirm(false);
     }
@@ -37,7 +40,8 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
       name,
       target: parseInt(target),
       current: parseInt(current) || 0,
-      date
+      date,
+      linkedWallet: linkedWallet || null
     };
 
     if (existingGoal) {
@@ -101,15 +105,38 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Current Saved (Rp)</label>
-            <input
-              type="number"
-              value={current}
-              onChange={(e) => setCurrent(e.target.value)}
-              className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors font-medium"
-              placeholder="0"
-            />
+            <label className="block text-sm font-medium text-gray-400 mb-1">Link to Savings Wallet (Optional)</label>
+            <select
+              value={linkedWallet}
+              onChange={(e) => {
+                setLinkedWallet(e.target.value);
+                if (e.target.value) {
+                  const w = wallets.find(wall => wall.name === e.target.value);
+                  if (w) setCurrent(w.balance.toString());
+                }
+              }}
+              className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-sm font-medium"
+            >
+              <option value="">No Link (Manual Progress)</option>
+              {wallets.filter(w => w.type === 'savings').map(w => (
+                <option key={w.name} value={w.name}>{w.name} (Rp {w.balance.toLocaleString('id-ID')})</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-500 mt-1 mb-2">If linked, goal progress automatically syncs with the wallet balance.</p>
           </div>
+
+          {!linkedWallet && (
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">Current Saved (Rp)</label>
+              <input
+                type="number"
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
+                className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors font-medium"
+                placeholder="0"
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">Target Date</label>

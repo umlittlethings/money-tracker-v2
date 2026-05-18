@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Pencil } from 'lucide-react';
 import useStore from '../store/useStore';
 import EditExpenseModal from '../components/EditExpenseModal';
 import AdjustBalanceModal from '../components/AdjustBalanceModal';
+import TransferModal from '../components/TransferModal';
+import { ArrowRightLeft } from 'lucide-react';
 
 const Dashboard = () => {
   const { profile, transactions } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
 
   const today = new Date().toISOString().split('T')[0];
@@ -29,7 +31,7 @@ const Dashboard = () => {
   // Filter cycle transactions
   const cycleTransactions = transactions.filter(t => {
     const tDate = new Date(t.date);
-    return tDate >= cycleStart && tDate <= cycleEnd;
+    return tDate >= cycleStart && tDate <= cycleEnd && t.category !== 'System';
   });
 
   // Calculate today's spending
@@ -37,9 +39,12 @@ const Dashboard = () => {
     .filter(t => t.date.startsWith(today))
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  // Calculate remaining monthly balance based ONLY on this cycle's transactions
-  const totalSpending = cycleTransactions.reduce((acc, curr) => acc + curr.amount, 0);
-  const remainingBalance = profile.monthlyIncome - profile.savingsTarget - profile.churchTithe - totalSpending;
+  // Calculate total remaining balance based on DAILY wallets only
+  const wallets = useStore(state => state.wallets);
+  const dailyWallets = wallets.filter(w => w.type !== 'savings');
+  const savingsWallets = wallets.filter(w => w.type === 'savings');
+  
+  const remainingBalance = dailyWallets.reduce((acc, w) => acc + w.balance, 0);
   const safeDaily = Math.max(0, profile.dailyBudget - todaySpending);
 
   return (
@@ -58,7 +63,7 @@ const Dashboard = () => {
       {/* Main Balance Card */}
       <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
-        <p className="text-gray-400 text-sm mb-1 relative z-10">Safe to spend today</p>
+        <p className="text-gray-400 text-sm mb-1 relative z-10">Safe to spend today (From Daily Wallets)</p>
         <h2 className="text-4xl font-extrabold text-primary mb-4 relative z-10">
           Rp {safeDaily.toLocaleString('id-ID')}
         </h2>
@@ -66,13 +71,7 @@ const Dashboard = () => {
         <div className="flex justify-between items-end relative z-10">
           <div>
             <div className="flex items-center gap-1">
-              <p className="text-xs text-gray-400">Monthly Remaining</p>
-              <button 
-                onClick={() => setIsAdjustOpen(true)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <Pencil size={12} />
-              </button>
+              <p className="text-xs text-gray-400">Total Money Left (Daily)</p>
             </div>
             <p className="text-lg font-semibold">Rp {remainingBalance.toLocaleString('id-ID')}</p>
           </div>
@@ -91,6 +90,52 @@ const Dashboard = () => {
             ? `You are on track! Keep it under Rp ${safeDaily.toLocaleString('id-ID')} today.`
             : "You've exceeded your daily budget. Try to save tomorrow!"}
         </p>
+      </div>
+
+      {/* Wallets Overview */}
+      <div>
+        <div className="flex justify-between items-end mb-4">
+          <h3 className="text-lg font-bold">Your Wallets</h3>
+          {wallets.length > 1 && (
+            <button 
+              onClick={() => setIsTransferOpen(true)}
+              className="text-info text-xs font-bold hover:text-info/80 transition-colors flex items-center gap-1 bg-info/10 px-2 py-1 rounded-md"
+            >
+              <ArrowRightLeft size={12} />
+              Transfer
+            </button>
+          )}
+        </div>
+        
+        {dailyWallets.length > 0 && (
+          <div className="mt-2">
+            <p className="text-xs text-gray-400 mb-2 uppercase font-bold tracking-wider">Daily Needs</p>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {dailyWallets.map(w => (
+                <div key={w.name} className="min-w-[140px] bg-card border border-gray-800 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-info/10 rounded-full blur-xl -mr-8 -mt-8"></div>
+                  <p className="text-sm text-gray-400 relative z-10">{w.name}</p>
+                  <p className="font-bold text-lg mt-1 text-info relative z-10">Rp {w.balance.toLocaleString('id-ID')}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {savingsWallets.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs text-gray-400 mb-2 uppercase font-bold tracking-wider">Savings</p>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {savingsWallets.map(w => (
+                <div key={w.name} className="min-w-[140px] bg-card border border-gray-800 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-savings/10 rounded-full blur-xl -mr-8 -mt-8"></div>
+                  <p className="text-sm text-gray-400 relative z-10">{w.name}</p>
+                  <p className="font-bold text-lg mt-1 text-savings relative z-10">Rp {w.balance.toLocaleString('id-ID')}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Recent Transactions */}
@@ -116,8 +161,13 @@ const Dashboard = () => {
                       {t.category === 'Food' ? '🍔' : t.category === 'Coffee' ? '☕' : '💸'}
                     </div>
                     <div>
-                      <p className="font-semibold">{t.category}</p>
-                      {t.note && <p className="text-xs text-gray-400">{t.note}</p>}
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold">{t.category}</p>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-300 font-medium">
+                          {t.wallet || 'Cash'}
+                        </span>
+                      </div>
+                      {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
                     </div>
                   </div>
                   <p className="font-bold text-expense">-Rp {t.amount.toLocaleString('id-ID')}</p>
@@ -142,6 +192,11 @@ const Dashboard = () => {
         isOpen={isAdjustOpen}
         onClose={() => setIsAdjustOpen(false)}
         currentAppBalance={remainingBalance}
+      />
+
+      <TransferModal
+        isOpen={isTransferOpen}
+        onClose={() => setIsTransferOpen(false)}
       />
     </div>
   );
