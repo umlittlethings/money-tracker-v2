@@ -14,6 +14,7 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useStore from '../store/useStore';
 import EditExpenseModal from '../components/EditExpenseModal';
+import { formatMoney } from '../utils/format';
 
 const Calendar = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -21,7 +22,8 @@ const Calendar = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
   
-  const { transactions } = useStore();
+  const { transactions, settings } = useStore();
+  const hideBalance = settings?.hideBalance || false;
 
   const renderHeader = () => {
     return (
@@ -104,7 +106,7 @@ const Calendar = () => {
             </div>
             {dayTotal > 0 && (
               <span className="text-[9px] mt-1 text-gray-400 truncate w-full text-center">
-                {(dayTotal / 1000).toFixed(0)}k
+                {hideBalance ? '***' : `${(dayTotal / 1000).toFixed(0)}k`}
               </span>
             )}
           </div>
@@ -133,7 +135,7 @@ const Calendar = () => {
             {isSameDay(selectedDate, new Date()) ? 'Today' : format(selectedDate, 'dd MMM yyyy')}
           </h3>
           <span className="text-sm font-semibold text-expense">
-            Total: Rp {dayTotal.toLocaleString('id-ID')}
+            Total: {formatMoney(dayTotal, hideBalance)}
           </span>
         </div>
 
@@ -164,7 +166,7 @@ const Calendar = () => {
                     {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
                   </div>
                 </div>
-                <p className="font-bold text-expense">-Rp {t.amount.toLocaleString('id-ID')}</p>
+                <p className="font-bold text-expense">- {formatMoney(t.amount, hideBalance)}</p>
               </div>
             ))
           )}

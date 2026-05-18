@@ -3,14 +3,17 @@ import useStore from '../store/useStore';
 import EditExpenseModal from '../components/EditExpenseModal';
 import AdjustBalanceModal from '../components/AdjustBalanceModal';
 import TransferModal from '../components/TransferModal';
-import { ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft, Eye, EyeOff } from 'lucide-react';
+import { formatMoney } from '../utils/format';
 
 const Dashboard = () => {
-  const { profile, transactions } = useStore();
+  const { profile, transactions, settings, toggleHideBalance } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAdjustOpen, setIsAdjustOpen] = useState(false);
   const [isTransferOpen, setIsTransferOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState(null);
+  
+  const hideBalance = settings.hideBalance;
 
   const today = new Date().toISOString().split('T')[0];
   
@@ -55,8 +58,16 @@ const Dashboard = () => {
           <p className="text-gray-400 text-sm">Welcome back,</p>
           <h1 className="text-2xl font-bold">{profile.name}</h1>
         </div>
-        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary text-primary font-bold">
-          {profile.level === 'Disciplined Saver' ? 'DS' : 'BS'}
+        <div className="flex gap-3">
+          <button 
+            onClick={toggleHideBalance} 
+            className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+          >
+            {hideBalance ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary text-primary font-bold">
+            {profile.level === 'Disciplined Saver' ? 'DS' : 'BS'}
+          </div>
         </div>
       </header>
 
@@ -65,7 +76,7 @@ const Dashboard = () => {
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <p className="text-gray-400 text-sm mb-1 relative z-10">Safe to spend today (From Daily Wallets)</p>
         <h2 className="text-4xl font-extrabold text-primary mb-4 relative z-10">
-          Rp {safeDaily.toLocaleString('id-ID')}
+          Rp {formatMoney(safeDaily, hideBalance)}
         </h2>
         
         <div className="flex justify-between items-end relative z-10">
@@ -73,11 +84,11 @@ const Dashboard = () => {
             <div className="flex items-center gap-1">
               <p className="text-xs text-gray-400">Total Money Left (Daily)</p>
             </div>
-            <p className="text-lg font-semibold">Rp {remainingBalance.toLocaleString('id-ID')}</p>
+            <p className="text-lg font-semibold">Rp {formatMoney(remainingBalance, hideBalance)}</p>
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-400">Spent Today</p>
-            <p className="text-lg font-semibold text-expense">Rp {todaySpending.toLocaleString('id-ID')}</p>
+            <p className="text-lg font-semibold text-expense">Rp {formatMoney(todaySpending, hideBalance)}</p>
           </div>
         </div>
       </div>
@@ -115,7 +126,7 @@ const Dashboard = () => {
                 <div key={w.name} className="min-w-[140px] bg-card border border-gray-800 rounded-2xl p-4 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 bg-info/10 rounded-full blur-xl -mr-8 -mt-8"></div>
                   <p className="text-sm text-gray-400 relative z-10">{w.name}</p>
-                  <p className="font-bold text-lg mt-1 text-info relative z-10">Rp {w.balance.toLocaleString('id-ID')}</p>
+                  <p className="font-bold text-lg mt-1 text-info relative z-10">Rp {formatMoney(w.balance, hideBalance)}</p>
                 </div>
               ))}
             </div>
@@ -130,7 +141,7 @@ const Dashboard = () => {
                 <div key={w.name} className="min-w-[140px] bg-card border border-gray-800 rounded-2xl p-4 shadow-sm relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-16 h-16 bg-savings/10 rounded-full blur-xl -mr-8 -mt-8"></div>
                   <p className="text-sm text-gray-400 relative z-10">{w.name}</p>
-                  <p className="font-bold text-lg mt-1 text-savings relative z-10">Rp {w.balance.toLocaleString('id-ID')}</p>
+                  <p className="font-bold text-lg mt-1 text-savings relative z-10">Rp {formatMoney(w.balance, hideBalance)}</p>
                 </div>
               ))}
             </div>
@@ -170,7 +181,7 @@ const Dashboard = () => {
                       {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
                     </div>
                   </div>
-                  <p className="font-bold text-expense">-Rp {t.amount.toLocaleString('id-ID')}</p>
+                  <p className="font-bold text-expense">-Rp {formatMoney(t.amount, hideBalance)}</p>
                 </div>
             ))
           )}
