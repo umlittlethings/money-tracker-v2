@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pencil } from 'lucide-react';
 import useStore from '../store/useStore';
 import EditExpenseModal from '../components/EditExpenseModal';

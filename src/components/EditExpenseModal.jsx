@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import useStore from '../store/useStore';

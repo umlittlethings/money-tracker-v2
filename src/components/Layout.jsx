@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Home, Calendar, PieChart, Target, Settings, Plus } from 'lucide-react';
 import AddExpenseModal from './AddExpenseModal';
