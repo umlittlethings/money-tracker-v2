@@ -51,7 +51,7 @@ const Dashboard = () => {
   const safeDaily = Math.max(0, profile.dailyBudget - todaySpending);
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <header className="flex justify-between items-center mt-4">
         <div>
@@ -71,9 +71,13 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Balance Card */}
-      <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+      <div className="md:grid md:grid-cols-12 md:gap-8">
+        
+        {/* LEFT COLUMN (Desktop) */}
+        <div className="md:col-span-7 space-y-6">
+          {/* Main Balance Card */}
+          <div className="glass-card rounded-3xl p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
         <p className="text-gray-400 text-sm mb-1 relative z-10">Safe to spend today (From Daily Wallets)</p>
         <h2 className="text-4xl font-extrabold text-primary mb-4 relative z-10">
           Rp {formatMoney(safeDaily, hideBalance)}
@@ -91,16 +95,6 @@ const Dashboard = () => {
             <p className="text-lg font-semibold text-expense">Rp {formatMoney(todaySpending, hideBalance)}</p>
           </div>
         </div>
-      </div>
-
-      {/* Smart Insight */}
-      <div className="bg-blue-900/20 border border-info/20 rounded-2xl p-4 flex items-start gap-3">
-        <div className="mt-0.5 text-info">💡</div>
-        <p className="text-sm text-blue-200">
-          {safeDaily > 0 
-            ? `You are on track! Keep it under Rp ${safeDaily.toLocaleString('id-ID')} today.`
-            : "You've exceeded your daily budget. Try to save tomorrow!"}
-        </p>
       </div>
 
       {/* Wallets Overview */}
@@ -148,43 +142,58 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+    </div>
 
-      {/* Recent Transactions */}
-      <div>
-        <h3 className="text-lg font-bold mb-4">Today's Expenses</h3>
-        <div className="space-y-3">
-          {cycleTransactions.filter(t => t.date.startsWith(today)).length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-4">No expenses yet today.</p>
-          ) : (
-            cycleTransactions
-              .filter(t => t.date.startsWith(today))
-              .map(t => (
-                <div 
-                  key={t.id} 
-                  onClick={() => {
-                    setSelectedExpense(t);
-                    setIsEditOpen(true);
-                  }}
-                  className="flex justify-between items-center bg-card border rounded-2xl p-4 cursor-pointer hover:bg-gray-900 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-lg">
-                      {t.category === 'Food' ? '🍔' : t.category === 'Coffee' ? '☕' : '💸'}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold">{t.category}</p>
-                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-300 font-medium">
-                          {t.wallet || 'Cash'}
-                        </span>
+        {/* RIGHT COLUMN (Desktop) */}
+        <div className="md:col-span-5 space-y-6 mt-6 md:mt-0">
+          {/* Smart Insight */}
+          <div className="bg-blue-900/20 border border-info/20 rounded-2xl p-4 flex items-start gap-3">
+            <div className="mt-0.5 text-info">💡</div>
+            <p className="text-sm text-blue-200">
+              {safeDaily > 0 
+                ? `You are on track! Keep it under Rp ${formatMoney(safeDaily, hideBalance)} today.`
+                : "You've exceeded your daily budget. Try to save tomorrow!"}
+            </p>
+          </div>
+
+          {/* Recent Transactions */}
+          <div className="bg-card md:bg-gray-900/30 md:border md:border-gray-800 md:p-6 rounded-3xl">
+            <h3 className="text-lg font-bold mb-4">Today's Expenses</h3>
+            <div className="space-y-3">
+              {cycleTransactions.filter(t => t.date.startsWith(today)).length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-4">No expenses yet today.</p>
+              ) : (
+                cycleTransactions
+                  .filter(t => t.date.startsWith(today))
+                  .map(t => (
+                    <div 
+                      key={t.id} 
+                      onClick={() => {
+                        setSelectedExpense(t);
+                        setIsEditOpen(true);
+                      }}
+                      className="flex justify-between items-center bg-card border rounded-2xl p-4 cursor-pointer hover:bg-gray-900 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-lg">
+                          {t.category === 'Food' ? '🍔' : t.category === 'Coffee' ? '☕' : '💸'}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold">{t.category}</p>
+                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-gray-800 border border-gray-700 text-gray-300 font-medium">
+                              {t.wallet || 'Cash'}
+                            </span>
+                          </div>
+                          {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
+                        </div>
                       </div>
-                      {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
+                      <p className="font-bold text-expense">-Rp {formatMoney(t.amount, hideBalance)}</p>
                     </div>
-                  </div>
-                  <p className="font-bold text-expense">-Rp {formatMoney(t.amount, hideBalance)}</p>
-                </div>
-            ))
-          )}
+                  ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
       
