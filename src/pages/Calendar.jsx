@@ -79,7 +79,7 @@ const Calendar = () => {
         
         // Calculate total expense for this day
         const dayString = format(day, 'yyyy-MM-dd');
-        const dayTransactions = transactions.filter(t => t.date.startsWith(dayString));
+        const dayTransactions = transactions.filter(t => t.date.startsWith(dayString) && t.category !== 'System');
         const dayTotal = dayTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
         // Determine background color based on spending intensity
@@ -123,7 +123,7 @@ const Calendar = () => {
 
   const renderSelectedDayExpenses = () => {
     const dayString = format(selectedDate, 'yyyy-MM-dd');
-    const dayTransactions = transactions.filter(t => t.date.startsWith(dayString));
+    const dayTransactions = transactions.filter(t => t.date.startsWith(dayString) && t.category !== 'System');
     const dayTotal = dayTransactions.reduce((acc, curr) => acc + curr.amount, 0);
 
     return (

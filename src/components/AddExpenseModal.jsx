@@ -7,6 +7,7 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
   const [category, setCategory] = useState('Food');
   const [note, setNote] = useState('');
   const [wallet, setWallet] = useState('Cash');
+  const [error, setError] = useState('');
   const addTransaction = useStore(state => state.addTransaction);
   const wallets = useStore(state => state.wallets);
 
@@ -17,12 +18,23 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (!amount) return;
     
+    const parsedAmount = parseInt(amount);
+    const selectedWallet = wallets.find(w => w.name === wallet);
+    
+    if (selectedWallet && parsedAmount > selectedWallet.balance) {
+      setError(`Insufficient balance in ${wallet}. You only have Rp ${selectedWallet.balance.toLocaleString('id-ID')}.`);
+      return;
+    }
+    
     addTransaction({
-      amount: parseInt(amount),
+      amount: parsedAmount,
       category,
       note,
       wallet
     });
+    setAmount('');
+    setNote('');
+    setError('');
     onClose();
   };
 
@@ -43,12 +55,21 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-expense/10 text-expense p-3 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
+          
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-2">Amount (Rp)</label>
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setError('');
+              }}
               className="w-full bg-background border border-gray-800 rounded-2xl px-4 py-4 text-2xl font-bold text-center focus:outline-none focus:border-primary transition-colors"
               placeholder="0"
               autoFocus
@@ -92,14 +113,17 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
             <div className="flex flex-wrap gap-2">
               {wallets.map(w => (
                 <button
-                  key={w}
+                  key={w.name}
                   type="button"
-                  onClick={() => setWallet(w)}
+                  onClick={() => {
+                    setWallet(w.name);
+                    setError('');
+                  }}
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                    wallet === w ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                    wallet === w.name ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
                   }`}
                 >
-                  {w}
+                  {w.name}
                 </button>
               ))}
             </div>
