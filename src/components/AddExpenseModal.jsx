@@ -6,7 +6,9 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [note, setNote] = useState('');
+  const [wallet, setWallet] = useState('Cash');
   const addTransaction = useStore(state => state.addTransaction);
+  const wallets = useStore(state => state.wallets);
 
   const categories = ['Food', 'Coffee', 'Transport', 'Gaming', 'Shopping', 'Bills', 'Church', 'Other'];
   const quickAdds = [5000, 10000, 20000, 50000];
@@ -18,7 +20,8 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
     addTransaction({
       amount: parseInt(amount),
       category,
-      note
+      note,
+      wallet
     });
     onClose();
   };
@@ -79,6 +82,24 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                   }`}
                 >
                   {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Wallet</label>
+            <div className="flex flex-wrap gap-2">
+              {wallets.map(w => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => setWallet(w)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    wallet === w ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {w}
                 </button>
               ))}
             </div>

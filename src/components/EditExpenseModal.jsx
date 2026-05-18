@@ -7,9 +7,10 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [note, setNote] = useState('');
+  const [wallet, setWallet] = useState('Cash');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  const { updateTransaction, deleteTransaction } = useStore();
+  const { updateTransaction, deleteTransaction, wallets } = useStore();
 
   const categories = ['Food', 'Coffee', 'Transport', 'Gaming', 'Shopping', 'Bills', 'Church', 'Other'];
 
@@ -18,6 +19,7 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
       setAmount(transaction.amount.toString());
       setCategory(transaction.category || 'Food');
       setNote(transaction.note || '');
+      setWallet(transaction.wallet || 'Cash');
       setShowDeleteConfirm(false);
     }
   }, [transaction, isOpen]);
@@ -29,7 +31,8 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
     updateTransaction(transaction.id, {
       amount: parseInt(amount),
       category,
-      note
+      note,
+      wallet
     });
     onClose();
   };
@@ -87,6 +90,24 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
                   }`}
                 >
                   {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">Wallet</label>
+            <div className="flex flex-wrap gap-2">
+              {wallets.map(w => (
+                <button
+                  key={w}
+                  type="button"
+                  onClick={() => setWallet(w)}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    wallet === w ? 'bg-primary text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {w}
                 </button>
               ))}
             </div>
