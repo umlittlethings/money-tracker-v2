@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import useStore from '../store/useStore';
 import GoalModal from '../components/GoalModal';
+import { formatMoney } from '../utils/format';
 
 const Goals = () => {
-  const { goals } = useStore();
+  const { goals, settings } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
+  const hideBalance = settings.hideBalance;
 
   return (
     <div className="p-4 pt-10">
@@ -51,8 +53,8 @@ const Goals = () => {
               </div>
               
               <div className="flex justify-between mt-3 text-xs">
-                <span className="text-gray-400">Rp {currentAmount.toLocaleString('id-ID')}</span>
-                <span className="text-gray-400">Rp {goal.target.toLocaleString('id-ID')}</span>
+                <span className="text-gray-400">Rp {formatMoney(currentAmount, hideBalance)}</span>
+                <span className="text-gray-400">Rp {formatMoney(goal.target, hideBalance)}</span>
               </div>
             </div>
           );

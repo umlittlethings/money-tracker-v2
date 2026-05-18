@@ -19,7 +19,8 @@ const useStore = create((set, get) => ({
   transactions: [],
   goals: [],
   wallets: [{ name: 'Cash', balance: 0 }],
-  settings: { darkMode: true },
+  subscriptions: [],
+  settings: { darkMode: true, hideBalance: false },
   isLoading: true,
   
   addWallet: async (walletName, initialBalance = 0, type = 'daily') => {
@@ -115,10 +116,12 @@ const useStore = create((set, get) => ({
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ user: session?.user ?? null, isLoading: false });
       if (session?.user) {
-        get().fetchData();
+        get().fetchData().then(() => {
+          get().processSubscriptions();
+        });
       } else {
         // Clear state on logout
-        set({ profile: defaultProfile, transactions: [], goals: [] });
+        set({ profile: defaultProfile, transactions: [], goals: [], subscriptions: [] });
       }
     });
   },
@@ -145,7 +148,8 @@ const useStore = create((set, get) => ({
         wallets: (profile.wallets || [{ name: 'Cash', balance: 0, type: 'daily' }]).map(w => {
           if (typeof w === 'string') return { name: w, balance: 0, type: 'daily' };
           return { ...w, type: w.type || 'daily' };
-        })
+        }),
+        subscriptions: profile.subscriptions || []
       });
     }
 
@@ -162,6 +166,91 @@ const useStore = create((set, get) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
+  },
+
+  // -------------------------
+  // SUBSCRIPTIONS (Auto-Bills)
+  // -------------------------
+  processSubscriptions: async () => {
+    const user = get().user;
+    if (!user) return;
+    
+    const { subscriptions, addTransaction } = get();
+    if (!subscriptions || subscriptions.length === 0) return;
+
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${today.getMonth() + 1}`;
+    const currentDay = today.getDate();
+    
+    let updatedSubs = false;
+    const newSubs = [...subscriptions];
+
+    for (let i = 0; i < newSubs.length; i++) {
+      const sub = newSubs[i];
+      if (currentDay >= sub.dayOfMonth && sub.lastProcessedMonth !== currentMonthStr) {
+        // Process subscription
+        await addTransaction({
+          amount: sub.amount,
+          category: sub.category || 'Bills',
+          note: `[Auto-Bill] ${sub.name}`,
+          wallet: sub.wallet
+        });
+        
+        newSubs[i].lastProcessedMonth = currentMonthStr;
+        updatedSubs = true;
+      }
+    }
+
+    if (updatedSubs) {
+      set({ subscriptions: newSubs });
+      await supabase.from('profiles').update({ subscriptions: newSubs }).eq('id', user.id);
+    }
+  },
+
+  addSubscription: async (sub) => {
+    const user = get().user;
+    if (!user) return;
+
+    const newSub = {
+      id: Math.random().toString(),
+      name: sub.name,
+      amount: sub.amount,
+      wallet: sub.wallet,
+      category: sub.category || 'Bills',
+      dayOfMonth: sub.dayOfMonth,
+      lastProcessedMonth: null // will be processed immediately if date passed
+    };
+
+    const newSubs = [...get().subscriptions, newSub];
+    
+    // Optimistic update
+    set({ subscriptions: newSubs });
+    
+    const { error } = await supabase.from('profiles').update({ subscriptions: newSubs }).eq('id', user.id);
+    if (error) {
+      alert("Gagal menyimpan ke Database: Kolom subscriptions belum ada. Tolong jalankan perintah SQL di Supabase.");
+      console.error(error);
+      // Revert if error
+      set({ subscriptions: get().subscriptions.filter(s => s.id !== newSub.id) });
+    } else {
+      get().processSubscriptions();
+    }
+  },
+
+  deleteSubscription: async (id) => {
+    const user = get().user;
+    if (!user) return;
+
+    const oldSubs = get().subscriptions;
+    const newSubs = oldSubs.filter(s => s.id !== id);
+    
+    set({ subscriptions: newSubs });
+    
+    const { error } = await supabase.from('profiles').update({ subscriptions: newSubs }).eq('id', user.id);
+    if (error) {
+      alert("Gagal menghapus.");
+      set({ subscriptions: oldSubs });
+    }
   },
 
   // -------------------------
@@ -329,7 +418,8 @@ const useStore = create((set, get) => ({
   // -------------------------
   // SETTINGS
   // -------------------------
-  toggleDarkMode: () => set((state) => ({ settings: { darkMode: !state.settings.darkMode } })),
+  toggleDarkMode: () => set((state) => ({ settings: { ...state.settings, darkMode: !state.settings.darkMode } })),
+  toggleHideBalance: () => set((state) => ({ settings: { ...state.settings, hideBalance: !state.settings.hideBalance } })),
 
 }));
 

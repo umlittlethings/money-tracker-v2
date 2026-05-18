@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import useStore from '../store/useStore';
 import EditProfileModal from '../components/EditProfileModal';
+import SubscriptionModal from '../components/SubscriptionModal';
+import { exportToCSV } from '../utils/export';
+import { formatMoney } from '../utils/format';
 
 const Settings = () => {
-  const { profile, settings, toggleDarkMode, signOut, transactions } = useStore();
+  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddingWallet, setIsAddingWallet] = useState(false);
   const [newWalletName, setNewWalletName] = useState('');
@@ -11,6 +14,11 @@ const Settings = () => {
   const [newWalletType, setNewWalletType] = useState('daily');
   const [editingWallet, setEditingWallet] = useState(null);
   const [editBalanceValue, setEditBalanceValue] = useState('');
+  
+  const [isSubOpen, setIsSubOpen] = useState(false);
+  const [selectedSub, setSelectedSub] = useState(null);
+  
+  const hideBalance = settings.hideBalance;
 
   return (
     <div className="p-4 pt-10">
@@ -26,11 +34,11 @@ const Settings = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Monthly Income</span>
-              <span className="font-medium text-savings">Rp {profile.monthlyIncome.toLocaleString('id-ID')}</span>
+              <span className="font-medium text-savings">Rp {formatMoney(profile.monthlyIncome, hideBalance)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-400">Daily Budget</span>
-              <span className="font-medium">Rp {profile.dailyBudget.toLocaleString('id-ID')}</span>
+              <span className="font-medium">Rp {formatMoney(profile.dailyBudget, hideBalance)}</span>
             </div>
             <button 
               onClick={() => setIsEditOpen(true)}
@@ -51,6 +59,47 @@ const Settings = () => {
             >
               <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${settings.darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
+          </div>
+          
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
+            <span className="text-gray-300">Data Export</span>
+            <button 
+              onClick={() => exportToCSV(transactions)}
+              className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-xl text-primary transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="glass-card rounded-2xl p-4">
+          <div className="flex justify-between items-end mb-4 border-b border-gray-800 pb-2">
+            <h3 className="font-bold text-lg">Auto-Bills</h3>
+            <button 
+              onClick={() => { setSelectedSub(null); setIsSubOpen(true); }}
+              className="text-primary text-xs font-bold bg-primary/10 px-2 py-1 rounded-md"
+            >
+              + Add Bill
+            </button>
+          </div>
+          <div className="space-y-3 text-sm">
+            {!subscriptions || subscriptions.length === 0 ? (
+              <p className="text-gray-500 text-center py-2 text-xs">No active subscriptions.</p>
+            ) : (
+              subscriptions.map(sub => (
+                <div 
+                  key={sub.id} 
+                  onClick={() => { setSelectedSub(sub); setIsSubOpen(true); }}
+                  className="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-700/50 cursor-pointer hover:bg-gray-700/50 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium text-gray-200">{sub.name}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">Renews every {sub.dayOfMonth}th • {sub.wallet}</p>
+                  </div>
+                  <span className="font-bold text-expense">Rp {formatMoney(sub.amount, hideBalance)}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -89,7 +138,7 @@ const Settings = () => {
                       }} className="text-primary text-xs font-bold">Save</button>
                     </div>
                   ) : (
-                    <span className="font-bold text-primary">Rp {w.balance.toLocaleString('id-ID')}</span>
+                    <span className="font-bold text-primary">Rp {formatMoney(w.balance, hideBalance)}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center mt-1">
@@ -204,7 +253,7 @@ const Settings = () => {
                     <p className="font-medium text-gray-300">{t.note}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{new Date(t.date).toLocaleDateString('id-ID')} • Wallet: {t.wallet}</p>
                   </div>
-                  <span className="font-bold text-gray-400">Rp {t.amount.toLocaleString('id-ID')}</span>
+                  <span className="font-bold text-gray-400">Rp {formatMoney(t.amount, hideBalance)}</span>
                 </div>
               ))
             )}
@@ -221,6 +270,12 @@ const Settings = () => {
       
       {/* Edit Profile Modal */}
       <EditProfileModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} />
+      
+      <SubscriptionModal 
+        isOpen={isSubOpen} 
+        onClose={() => setIsSubOpen(false)} 
+        existingSub={selectedSub} 
+      />
     </div>
   );
 };
