@@ -2,11 +2,11 @@ import { useState } from 'react';
 import useStore from '../store/useStore';
 import EditProfileModal from '../components/EditProfileModal';
 import SubscriptionModal from '../components/SubscriptionModal';
-import { exportToCSV, exportToPDF } from '../utils/export';
+import { exportToCSV, exportToPDF, exportToExcel } from '../utils/export';
 import { formatMoney } from '../utils/format';
 
 const Settings = () => {
-  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions } = useStore();
+  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions, wallets } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddingWallet, setIsAddingWallet] = useState(false);
   const [newWalletName, setNewWalletName] = useState('');
@@ -68,13 +68,19 @@ const Settings = () => {
             <span className="text-gray-300">Data Export</span>
             <div className="flex gap-2">
               <button 
-                onClick={() => exportToCSV(transactions)}
+                onClick={() => exportToCSV(transactions, wallets)}
                 className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-primary transition-colors"
               >
                 CSV
               </button>
               <button 
-                onClick={() => exportToPDF(transactions)}
+                onClick={() => exportToExcel(transactions, wallets)}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-savings transition-colors"
+              >
+                XLSX
+              </button>
+              <button 
+                onClick={() => exportToPDF(transactions, wallets)}
                 className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-expense transition-colors"
               >
                 PDF
