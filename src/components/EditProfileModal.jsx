@@ -6,7 +6,6 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   const { profile, updateProfile } = useStore();
   
   const [formData, setFormData] = useState({
-    name: profile.name || '',
     monthlyIncome: profile.monthlyIncome || 0,
     savingsTarget: profile.savingsTarget || 0,
     churchTithe: profile.churchTithe || 0,
@@ -20,7 +19,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'name' ? value : parseInt(value) || 0
+      [name]: parseInt(value) || 0
     }));
   };
 
@@ -45,17 +44,6 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">Monthly Income (Rp)</label>
             <input
