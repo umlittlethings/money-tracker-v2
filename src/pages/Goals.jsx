@@ -4,7 +4,7 @@ import GoalModal from '../components/GoalModal';
 import { formatMoney } from '../utils/format';
 
 const Goals = () => {
-  const { goals, settings } = useStore();
+  const { goals, settings, profile } = useStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
   const hideBalance = settings.hideBalance;
@@ -30,6 +30,15 @@ const Goals = () => {
           const currentAmount = linkedWalletObj ? linkedWalletObj.balance : goal.current;
           const progress = Math.min(100, Math.round((currentAmount / goal.target) * 100));
           
+          let projectionText = '';
+          const remainingAmount = Math.max(0, goal.target - currentAmount);
+          if (remainingAmount > 0 && profile?.savingsTarget > 0) {
+            const monthsRemaining = Math.ceil(remainingAmount / profile.savingsTarget);
+            projectionText = `Estimated: ${monthsRemaining} month${monthsRemaining > 1 ? 's' : ''} left at Rp ${formatMoney(profile.savingsTarget, hideBalance)}/mo`;
+          } else if (remainingAmount === 0) {
+            projectionText = 'Goal Reached! 🎉';
+          }
+          
           return (
             <div 
               key={goal.id} 
@@ -43,7 +52,14 @@ const Goals = () => {
                 <h3 className="font-bold text-lg">{goal.name}</h3>
                 <span className="text-primary font-bold">{progress}%</span>
               </div>
-              <p className="text-xs text-gray-400 mb-4">Target: {new Date(goal.date).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}</p>
+              <div className="mb-4">
+                <p className="text-xs text-gray-400">Target: {new Date(goal.date).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}</p>
+                {projectionText && (
+                  <p className={`text-xs mt-1 ${remainingAmount === 0 ? 'text-primary font-bold' : 'text-info'}`}>
+                    {projectionText}
+                  </p>
+                )}
+              </div>
               
               <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
                 <div 

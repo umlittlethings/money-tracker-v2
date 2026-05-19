@@ -145,8 +145,8 @@ const useStore = create((set, get) => ({
           streak: profile.streak,
           totalXp: profile.total_xp,
           level: profile.level,
-          lastProcessedPayday: profile.last_processed_payday,
-          salaryWallet: profile.salary_wallet
+          lastProcessedPayday: localStorage.getItem(`payday_${user.id}`),
+          salaryWallet: localStorage.getItem(`salaryWallet_${user.id}`) || ''
         },
         wallets: (profile.wallets || [{ name: 'Cash', balance: 0, type: 'daily' }]).map(w => {
           if (typeof w === 'string') return { name: w, balance: 0, type: 'daily' };
@@ -201,9 +201,6 @@ const useStore = create((set, get) => ({
 
       localStorage.setItem(storageKey, currentMonthStr);
       set((state) => ({ profile: { ...state.profile, lastProcessedPayday: currentMonthStr } }));
-      
-      // Optional DB update (might fail silently if column doesn't exist)
-      supabase.from('profiles').update({ last_processed_payday: currentMonthStr }).eq('id', user.id).then();
     }
   },
 
@@ -307,8 +304,12 @@ const useStore = create((set, get) => ({
       church_tithe: updates.churchTithe,
       daily_budget: updates.dailyBudget,
       payday: updates.payday,
-      salary_wallet: updates.salaryWallet,
     };
+
+    // Save salaryWallet to localStorage to avoid DB schema errors
+    if (updates.salaryWallet !== undefined) {
+      localStorage.setItem(`salaryWallet_${user.id}`, updates.salaryWallet);
+    }
 
     // Remove undefined
     Object.keys(dbUpdates).forEach(key => dbUpdates[key] === undefined && delete dbUpdates[key]);
