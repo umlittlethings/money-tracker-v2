@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import useStore from '../store/useStore';
 import EditProfileModal from '../components/EditProfileModal';
+import EditAuthModal from '../components/EditAuthModal';
 import SubscriptionModal from '../components/SubscriptionModal';
 import { exportToCSV, exportToPDF, exportToExcel } from '../utils/export';
 import { formatMoney } from '../utils/format';
@@ -8,6 +9,7 @@ import { formatMoney } from '../utils/format';
 const Settings = () => {
   const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions, wallets } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAddingWallet, setIsAddingWallet] = useState(false);
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletBalance, setNewWalletBalance] = useState('');
@@ -43,12 +45,20 @@ const Settings = () => {
               <span className="text-gray-400">Daily Budget</span>
               <span className="font-medium">Rp {formatMoney(profile.dailyBudget, hideBalance)}</span>
             </div>
-            <button 
-              onClick={() => setIsEditOpen(true)}
-              className="w-full mt-4 py-2 bg-gray-800 rounded-xl font-medium text-white hover:bg-gray-700 transition-colors"
-            >
-              Edit Budget Plan
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button 
+                onClick={() => setIsEditOpen(true)}
+                className="flex-1 py-2 bg-gray-800 rounded-xl font-medium text-white hover:bg-gray-700 transition-colors"
+              >
+                Edit Data
+              </button>
+              <button 
+                onClick={() => setIsAuthOpen(true)}
+                className="flex-1 py-2 bg-gray-800 rounded-xl font-medium text-info hover:bg-gray-700 transition-colors"
+              >
+                Login Details
+              </button>
+            </div>
           </div>
         </div>
 
@@ -297,6 +307,9 @@ const Settings = () => {
       
       {/* Edit Profile Modal */}
       <EditProfileModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} />
+      
+      {/* Edit Auth Modal */}
+      <EditAuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       
       <SubscriptionModal 
         isOpen={isSubOpen} 

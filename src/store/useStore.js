@@ -279,6 +279,22 @@ const useStore = create((set, get) => ({
     await supabase.from('profiles').update(dbUpdates).eq('id', user.id);
   },
 
+  updateCredentials: async (email, password) => {
+    const updates = {};
+    if (email) updates.email = email;
+    if (password) updates.password = password;
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase.auth.updateUser(updates);
+      if (error) {
+        alert("Gagal mengubah kredensial: " + error.message);
+        return false;
+      }
+      alert("Kredensial berhasil diperbarui! (Catatan: Anda mungkin perlu mengonfirmasi email baru)");
+      return true;
+    }
+    return false;
+  },
+
   // -------------------------
   // TRANSACTION ACTIONS
   // -------------------------
