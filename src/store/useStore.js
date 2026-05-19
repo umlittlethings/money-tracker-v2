@@ -117,6 +117,7 @@ const useStore = create((set, get) => ({
       set({ user: session?.user ?? null, isLoading: false });
       if (session?.user) {
         get().fetchData().then(() => {
+          get().processPayday();
           get().processSubscriptions();
         });
       } else {
@@ -143,7 +144,9 @@ const useStore = create((set, get) => ({
           payday: profile.payday,
           streak: profile.streak,
           totalXp: profile.total_xp,
-          level: profile.level
+          level: profile.level,
+          lastProcessedPayday: profile.last_processed_payday,
+          salaryWallet: profile.salary_wallet
         },
         wallets: (profile.wallets || [{ name: 'Cash', balance: 0, type: 'daily' }]).map(w => {
           if (typeof w === 'string') return { name: w, balance: 0, type: 'daily' };
@@ -166,6 +169,42 @@ const useStore = create((set, get) => ({
 
   signOut: async () => {
     await supabase.auth.signOut();
+  },
+
+  // -------------------------
+  // PAYDAY (Auto-Income)
+  // -------------------------
+  processPayday: async () => {
+    const { user, profile, addTransaction, wallets } = get();
+    if (!user || !profile.monthlyIncome || !profile.payday) return;
+
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${today.getMonth() + 1}`;
+    const currentDay = today.getDate();
+    
+    // Store in localStorage to avoid breaking if DB column doesn't exist
+    const storageKey = `payday_${user.id}`;
+    const lastProcessed = localStorage.getItem(storageKey) || profile.lastProcessedPayday;
+
+    if (currentDay >= profile.payday && lastProcessed !== currentMonthStr) {
+      // Prioritize explicit salaryWallet, or find 'BCA', or fallback to first wallet
+      const salaryWalletName = profile.salaryWallet || 
+                              wallets.find(w => w.name.toLowerCase().includes('bca'))?.name || 
+                              wallets[0]?.name || 'Cash';
+
+      await addTransaction({
+        amount: -profile.monthlyIncome, // negative adds to balance
+        category: 'Income',
+        note: `Salary (Payday ${profile.payday})`,
+        wallet: salaryWalletName
+      });
+
+      localStorage.setItem(storageKey, currentMonthStr);
+      set((state) => ({ profile: { ...state.profile, lastProcessedPayday: currentMonthStr } }));
+      
+      // Optional DB update (might fail silently if column doesn't exist)
+      supabase.from('profiles').update({ last_processed_payday: currentMonthStr }).eq('id', user.id).then();
+    }
   },
 
   // -------------------------
@@ -268,6 +307,7 @@ const useStore = create((set, get) => ({
       church_tithe: updates.churchTithe,
       daily_budget: updates.dailyBudget,
       payday: updates.payday,
+      salary_wallet: updates.salaryWallet,
     };
 
     // Remove undefined

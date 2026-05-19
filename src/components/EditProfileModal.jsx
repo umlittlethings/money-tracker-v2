@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const EditProfileModal = ({ isOpen, onClose }) => {
-  const { profile, updateProfile } = useStore();
+  const { profile, updateProfile, wallets } = useStore();
   
   const [formData, setFormData] = useState({
     monthlyIncome: profile.monthlyIncome || 0,
@@ -11,6 +11,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     churchTithe: profile.churchTithe || 0,
     dailyBudget: profile.dailyBudget || 0,
     payday: profile.payday || 25,
+    salaryWallet: profile.salaryWallet || '',
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,7 +21,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: parseInt(value) || 0
+      [name]: name === 'salaryWallet' ? value : (parseInt(value) || 0)
     }));
   };
 
@@ -91,17 +92,34 @@ const EditProfileModal = ({ isOpen, onClose }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Payday Date (1-31)</label>
-            <input
-              type="number"
-              name="payday"
-              min="1"
-              max="31"
-              value={formData.payday}
-              onChange={handleChange}
-              className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors font-medium text-info"
-            />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">Payday Date (1-31)</label>
+              <input
+                type="number"
+                name="payday"
+                min="1"
+                max="31"
+                value={formData.payday}
+                onChange={handleChange}
+                className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors font-medium text-info"
+              />
+            </div>
+            
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-400 mb-1">Salary Wallet</label>
+              <select
+                name="salaryWallet"
+                value={formData.salaryWallet}
+                onChange={handleChange}
+                className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors font-medium text-info"
+              >
+                <option value="">Default (Auto)</option>
+                {wallets.map(w => (
+                  <option key={w.name} value={w.name}>{w.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="pt-4">
