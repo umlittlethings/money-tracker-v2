@@ -6,6 +6,13 @@ import TransferModal from '../components/TransferModal';
 import { ArrowRightLeft, Eye, EyeOff } from 'lucide-react';
 import { formatMoney } from '../utils/format';
 
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) return words[0].charAt(0).toUpperCase();
+  return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+};
+
 const Dashboard = () => {
   const { profile, transactions, settings, toggleHideBalance } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -65,8 +72,8 @@ const Dashboard = () => {
           >
             {hideBalance ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary text-primary font-bold">
-            {profile.level === 'Disciplined Saver' ? 'DS' : 'BS'}
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary text-primary font-bold tracking-wider">
+            {getInitials(profile.name)}
           </div>
         </div>
       </header>

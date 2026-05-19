@@ -6,13 +6,13 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   const { profile, updateProfile } = useStore();
   
   const [formData, setFormData] = useState({
-    name: profile.name || '',
     monthlyIncome: profile.monthlyIncome || 0,
     savingsTarget: profile.savingsTarget || 0,
     churchTithe: profile.churchTithe || 0,
     dailyBudget: profile.dailyBudget || 0,
     payday: profile.payday || 25,
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -20,13 +20,15 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'name' ? value : parseInt(value) || 0
+      [name]: parseInt(value) || 0
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateProfile(formData);
+    setIsLoading(true);
+    await updateProfile(formData);
+    setIsLoading(false);
     onClose();
   };
 
@@ -45,17 +47,6 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">Monthly Income (Rp)</label>
             <input
@@ -116,9 +107,17 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95"
+              disabled={isLoading}
+              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
-              Save Changes
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </form>

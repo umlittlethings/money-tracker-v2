@@ -10,6 +10,8 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
   const [date, setDate] = useState('');
   const [linkedWallet, setLinkedWallet] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { addGoal, updateGoal, deleteGoal, wallets } = useStore();
 
@@ -32,7 +34,7 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
     }
   }, [existingGoal, isOpen]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !target) return;
 
@@ -44,11 +46,13 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
       linkedWallet: linkedWallet || null
     };
 
+    setIsLoading(true);
     if (existingGoal) {
-      updateGoal(existingGoal.id, goalData);
+      await updateGoal(existingGoal.id, goalData);
     } else {
-      addGoal(goalData);
+      await addGoal(goalData);
     }
+    setIsLoading(false);
     onClose();
   };
 
@@ -57,8 +61,10 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    deleteGoal(existingGoal.id);
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    await deleteGoal(existingGoal.id);
+    setIsDeleting(false);
     setShowDeleteConfirm(false);
     onClose();
   };
@@ -161,9 +167,17 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
             )}
             <button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95"
+              disabled={isLoading}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
-              Save Goal
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Goal'
+              )}
             </button>
           </div>
         </form>
@@ -189,9 +203,17 @@ const GoalModal = ({ isOpen, onClose, existingGoal }) => {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="flex-1 bg-expense hover:bg-expense/90 text-white py-4 rounded-2xl font-bold shadow-[0_4px_15px_rgba(239,68,68,0.4)] transition-transform active:scale-95"
+                disabled={isDeleting}
+                className="flex-1 bg-expense hover:bg-expense/90 text-white py-4 rounded-2xl font-bold shadow-[0_4px_15px_rgba(239,68,68,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
               >
-                Yes, Delete
+                {isDeleting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Yes, Delete'
+                )}
               </button>
             </div>
           </div>

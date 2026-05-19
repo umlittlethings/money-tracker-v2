@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import useStore from '../store/useStore';
 import EditProfileModal from '../components/EditProfileModal';
+import EditAuthModal from '../components/EditAuthModal';
 import SubscriptionModal from '../components/SubscriptionModal';
-import { exportToCSV } from '../utils/export';
+import { exportToCSV, exportToPDF, exportToExcel } from '../utils/export';
 import { formatMoney } from '../utils/format';
 
 const Settings = () => {
-  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions } = useStore();
+  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions, wallets } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAddingWallet, setIsAddingWallet] = useState(false);
   const [newWalletName, setNewWalletName] = useState('');
   const [newWalletBalance, setNewWalletBalance] = useState('');
@@ -43,12 +45,20 @@ const Settings = () => {
               <span className="text-gray-400">Daily Budget</span>
               <span className="font-medium">Rp {formatMoney(profile.dailyBudget, hideBalance)}</span>
             </div>
-            <button 
-              onClick={() => setIsEditOpen(true)}
-              className="w-full mt-4 py-2 bg-gray-800 rounded-xl font-medium text-white hover:bg-gray-700 transition-colors"
-            >
-              Edit Budget Plan
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button 
+                onClick={() => setIsEditOpen(true)}
+                className="flex-1 py-2 bg-gray-800 rounded-xl font-medium text-white hover:bg-gray-700 transition-colors"
+              >
+                Edit Data
+              </button>
+              <button 
+                onClick={() => setIsAuthOpen(true)}
+                className="flex-1 py-2 bg-gray-800 rounded-xl font-medium text-info hover:bg-gray-700 transition-colors"
+              >
+                Login Details
+              </button>
+            </div>
           </div>
         </div>
 
@@ -66,12 +76,26 @@ const Settings = () => {
           
           <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
             <span className="text-gray-300">Data Export</span>
-            <button 
-              onClick={() => exportToCSV(transactions)}
-              className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-xl text-primary transition-colors"
-            >
-              Export CSV
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => exportToCSV(transactions, wallets)}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-primary transition-colors"
+              >
+                CSV
+              </button>
+              <button 
+                onClick={() => exportToExcel(transactions, wallets)}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-savings transition-colors"
+              >
+                XLSX
+              </button>
+              <button 
+                onClick={() => exportToPDF(transactions, wallets)}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-expense transition-colors"
+              >
+                PDF
+              </button>
+            </div>
           </div>
         </div>
         
@@ -283,6 +307,9 @@ const Settings = () => {
       
       {/* Edit Profile Modal */}
       <EditProfileModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} />
+      
+      {/* Edit Auth Modal */}
+      <EditAuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       
       <SubscriptionModal 
         isOpen={isSubOpen} 

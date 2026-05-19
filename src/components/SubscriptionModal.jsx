@@ -9,6 +9,8 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
   const [wallet, setWallet] = useState('');
   const [dayOfMonth, setDayOfMonth] = useState(1);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { addSubscription, deleteSubscription, wallets } = useStore();
 
@@ -29,23 +31,22 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
     }
   }, [existingSub, isOpen, wallets]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !amount) return;
 
+    setIsLoading(true);
     if (existingSub) {
-      // Currently our useStore doesn't have updateSubscription. We can delete and recreate it.
-      deleteSubscription(existingSub.id).then(() => {
-        addSubscription({
-          name,
-          amount: parseInt(amount),
-          wallet,
-          category: 'Bills',
-          dayOfMonth: parseInt(dayOfMonth)
-        });
+      await deleteSubscription(existingSub.id);
+      await addSubscription({
+        name,
+        amount: parseInt(amount),
+        wallet,
+        category: 'Bills',
+        dayOfMonth: parseInt(dayOfMonth)
       });
     } else {
-      addSubscription({
+      await addSubscription({
         name,
         amount: parseInt(amount),
         wallet,
@@ -53,11 +54,14 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
         dayOfMonth: parseInt(dayOfMonth)
       });
     }
+    setIsLoading(false);
     onClose();
   };
 
-  const confirmDelete = () => {
-    deleteSubscription(existingSub.id);
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    await deleteSubscription(existingSub.id);
+    setIsDeleting(false);
     setShowDeleteConfirm(false);
     onClose();
   };
@@ -139,9 +143,17 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
             )}
             <button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95"
+              disabled={isLoading}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
-              Save Subscription
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Subscription'
+              )}
             </button>
           </div>
         </form>
@@ -161,9 +173,17 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="flex-1 bg-expense hover:bg-expense/90 text-white py-4 rounded-xl font-bold transition-colors"
+                disabled={isDeleting}
+                className="flex-1 bg-expense hover:bg-expense/90 text-white py-4 rounded-xl font-bold transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
               >
-                Delete
+                {isDeleting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
               </button>
             </div>
           </div>
