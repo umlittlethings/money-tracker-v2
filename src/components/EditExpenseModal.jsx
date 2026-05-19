@@ -10,6 +10,8 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
   const [wallet, setWallet] = useState('Cash');
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { updateTransaction, deleteTransaction, wallets } = useStore();
 
@@ -25,7 +27,7 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
     }
   }, [transaction, isOpen]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!amount || !transaction) return;
     
@@ -44,12 +46,14 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
       return;
     }
     
-    updateTransaction(transaction.id, {
+    setIsLoading(true);
+    await updateTransaction(transaction.id, {
       amount: parsedAmount,
       category,
       note,
       wallet
     });
+    setIsLoading(false);
     setError('');
     onClose();
   };
@@ -59,8 +63,10 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
     setShowDeleteConfirm(true);
   };
 
-  const confirmDelete = () => {
-    deleteTransaction(transaction.id);
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    await deleteTransaction(transaction.id);
+    setIsDeleting(false);
     setShowDeleteConfirm(false);
     onClose();
   };
@@ -163,9 +169,17 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
             </button>
             <button
               type="submit"
-              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95"
+              disabled={isLoading}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
-              Save Changes
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </form>
@@ -191,9 +205,17 @@ const EditExpenseModal = ({ isOpen, onClose, transaction }) => {
               <button
                 type="button"
                 onClick={confirmDelete}
-                className="flex-1 bg-expense hover:bg-expense/90 text-white py-4 rounded-2xl font-bold shadow-[0_4px_15px_rgba(239,68,68,0.4)] transition-transform active:scale-95"
+                disabled={isDeleting}
+                className="flex-1 bg-expense hover:bg-expense/90 text-white py-4 rounded-2xl font-bold shadow-[0_4px_15px_rgba(239,68,68,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
               >
-                Yes, Delete
+                {isDeleting ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Yes, Delete'
+                )}
               </button>
             </div>
           </div>

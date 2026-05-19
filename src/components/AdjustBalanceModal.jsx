@@ -4,9 +4,10 @@ import useStore from '../store/useStore';
 
 const AdjustBalanceModal = ({ isOpen, onClose, currentAppBalance }) => {
   const [actualBalance, setActualBalance] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { addTransaction } = useStore();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!actualBalance) return;
 
@@ -14,11 +15,13 @@ const AdjustBalanceModal = ({ isOpen, onClose, currentAppBalance }) => {
     const adjustmentAmount = currentAppBalance - actual;
 
     if (adjustmentAmount !== 0) {
-      addTransaction({
+      setIsLoading(true);
+      await addTransaction({
         amount: adjustmentAmount,
         category: 'Other',
         note: 'Balance Adjustment',
       });
+      setIsLoading(false);
     }
     
     onClose();
@@ -60,9 +63,17 @@ const AdjustBalanceModal = ({ isOpen, onClose, currentAppBalance }) => {
 
           <button
             type="submit"
-            className="w-full bg-info hover:bg-info/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(59,130,246,0.4)] transition-transform active:scale-95"
+            disabled={isLoading}
+            className="w-full bg-info hover:bg-info/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(59,130,246,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
-            Sync Balance
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Syncing...
+              </>
+            ) : (
+              'Sync Balance'
+            )}
           </button>
         </form>
       </div>

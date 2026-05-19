@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const AddExpenseModal = ({ isOpen, onClose }) => {
+  const [isLoading, setIsLoading] = useState(false);
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
   const [note, setNote] = useState('');
@@ -14,7 +15,7 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
   const categories = ['Food', 'Coffee', 'Transport', 'Gaming', 'Shopping', 'Bills', 'Church', 'Other'];
   const quickAdds = [5000, 10000, 20000, 50000];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!amount) return;
     
@@ -26,12 +27,15 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
       return;
     }
     
-    addTransaction({
+    setIsLoading(true);
+    await addTransaction({
       amount: parsedAmount,
       category,
       note,
       wallet
     });
+    setIsLoading(false);
+    
     setAmount('');
     setNote('');
     setError('');
@@ -142,9 +146,17 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
           <button
             type="submit"
-            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95"
+            disabled={isLoading}
+            className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
-            Save Expense
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </>
+            ) : (
+              'Save Expense'
+            )}
           </button>
         </form>
       </div>

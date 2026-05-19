@@ -8,10 +8,11 @@ const TransferModal = ({ isOpen, onClose }) => {
   const [toWallet, setToWallet] = useState(wallets[1]?.name || '');
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleTransfer = (e) => {
+  const handleTransfer = async (e) => {
     e.preventDefault();
     const transferAmount = parseInt(amount);
     
@@ -31,7 +32,9 @@ const TransferModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    transferWalletBalance(fromWallet, toWallet, transferAmount);
+    setIsLoading(true);
+    await transferWalletBalance(fromWallet, toWallet, transferAmount);
+    setIsLoading(false);
     setAmount('');
     setError('');
     onClose();
@@ -108,9 +111,17 @@ const TransferModal = ({ isOpen, onClose }) => {
 
           <button
             type="submit"
-            className="w-full mt-4 bg-info hover:bg-info/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(59,130,246,0.4)] transition-transform active:scale-95"
+            disabled={isLoading}
+            className="w-full mt-4 bg-info hover:bg-info/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(59,130,246,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
           >
-            Transfer Funds
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Transferring...
+              </>
+            ) : (
+              'Transfer Funds'
+            )}
           </button>
         </form>
       </div>

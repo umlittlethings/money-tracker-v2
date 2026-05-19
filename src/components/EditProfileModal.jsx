@@ -12,6 +12,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     dailyBudget: profile.dailyBudget || 0,
     payday: profile.payday || 25,
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   if (!isOpen) return null;
 
@@ -23,9 +24,11 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    updateProfile(formData);
+    setIsLoading(true);
+    await updateProfile(formData);
+    setIsLoading(false);
     onClose();
   };
 
@@ -104,9 +107,17 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95"
+              disabled={isLoading}
+              className="w-full bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
-              Save Changes
+              {isLoading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
         </form>
