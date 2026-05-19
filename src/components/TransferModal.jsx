@@ -76,9 +76,16 @@ const TransferModal = ({ isOpen, onClose }) => {
               </select>
             </div>
             
-            <div className="mt-5 text-gray-500">
+            <button 
+              type="button"
+              onClick={() => {
+                setFromWallet(toWallet);
+                setToWallet(fromWallet);
+              }}
+              className="mt-5 text-gray-500 hover:text-info p-2 rounded-full hover:bg-gray-800 transition-colors"
+            >
               <ArrowRightLeft size={20} />
-            </div>
+            </button>
 
             <div className="flex-1">
               <label className="block text-xs font-medium text-gray-400 mb-1">To</label>

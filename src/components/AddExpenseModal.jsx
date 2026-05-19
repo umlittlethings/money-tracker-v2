@@ -91,6 +91,13 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
                   +{val / 1000}k
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setAmount('')}
+                className="flex-[0.8] bg-gray-800 hover:bg-expense/20 text-gray-400 hover:text-expense py-2 rounded-xl text-sm font-medium transition-colors"
+              >
+                Clear
+              </button>
             </div>
           </div>
 
