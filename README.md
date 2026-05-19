@@ -2,8 +2,6 @@
 
 **MoneyFlow** is a modern, mobile-first personal finance and budgeting web application. Designed with a sleek dark-mode UI, it helps users aggressively track expenses, manage daily budgets, and achieve savings goals through an engaging, gamified experience.
 
-![MoneyFlow Demo](./public/favicon.svg) <!-- You can replace this with a real screenshot later -->
-
 ## 🌟 Key Features
 
 *   **Smart Dashboard:** Get a real-time overview of your remaining monthly balance and strict daily spending limits.
