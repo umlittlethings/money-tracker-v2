@@ -2,7 +2,7 @@ import { useState } from 'react';
 import useStore from '../store/useStore';
 import EditProfileModal from '../components/EditProfileModal';
 import SubscriptionModal from '../components/SubscriptionModal';
-import { exportToCSV } from '../utils/export';
+import { exportToCSV, exportToPDF } from '../utils/export';
 import { formatMoney } from '../utils/format';
 
 const Settings = () => {
@@ -66,12 +66,20 @@ const Settings = () => {
           
           <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
             <span className="text-gray-300">Data Export</span>
-            <button 
-              onClick={() => exportToCSV(transactions)}
-              className="px-4 py-1.5 bg-gray-800 hover:bg-gray-700 text-sm font-medium rounded-xl text-primary transition-colors"
-            >
-              Export CSV
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => exportToCSV(transactions)}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-primary transition-colors"
+              >
+                CSV
+              </button>
+              <button 
+                onClick={() => exportToPDF(transactions)}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs font-medium rounded-xl text-expense transition-colors"
+              >
+                PDF
+              </button>
+            </div>
           </div>
         </div>
         
