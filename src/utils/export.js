@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { formatMoney } from './format';
@@ -88,7 +88,7 @@ export const exportToPDF = (transactions, wallets = []) => {
   const saldoRows = wallets.map(w => [w.name, `Rp ${formatMoney(w.balance, false)}`]);
   saldoRows.push(['TOTAL KESELURUHAN', `Rp ${formatMoney(totalBalance, false)}`]);
 
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Dompet', 'Saldo Saat Ini']],
     body: saldoRows,
     startY: 28,
@@ -111,7 +111,7 @@ export const exportToPDF = (transactions, wallets = []) => {
 
   doc.setFontSize(14);
   doc.text("Daftar Pengeluaran", 14, finalY + 12);
-  doc.autoTable({
+  autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
     startY: finalY + 17,
@@ -132,7 +132,7 @@ export const exportToPDF = (transactions, wallets = []) => {
       `Rp ${formatMoney(t.amount, false)}`
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: sysRows,
       startY: 22,
