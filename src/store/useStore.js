@@ -22,6 +22,7 @@ const useStore = create((set, get) => ({
   subscriptions: [],
   settings: { darkMode: true, hideBalance: false },
   isLoading: true,
+  isAuthInitialized: false,
   
   addWallet: async (walletName, initialBalance = 0, type = 'daily') => {
     const user = get().user;
@@ -108,6 +109,9 @@ const useStore = create((set, get) => ({
   },
 
   initializeAuth: () => {
+    if (get().isAuthInitialized) return;
+    set({ isAuthInitialized: true });
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       set({ user: session?.user ?? null, isLoading: false });
       if (session?.user) get().fetchData();
@@ -187,6 +191,10 @@ const useStore = create((set, get) => ({
     const lastProcessed = localStorage.getItem(storageKey) || profile.lastProcessedPayday;
 
     if (currentDay >= profile.payday && lastProcessed !== currentMonthStr) {
+      // Synchronously update to prevent concurrent runs
+      localStorage.setItem(storageKey, currentMonthStr);
+      set((state) => ({ profile: { ...state.profile, lastProcessedPayday: currentMonthStr } }));
+
       // Prioritize explicit salaryWallet, or find 'BCA', or fallback to first wallet
       const salaryWalletName = profile.salaryWallet || 
                               wallets.find(w => w.name.toLowerCase().includes('bca'))?.name || 
@@ -198,9 +206,6 @@ const useStore = create((set, get) => ({
         note: `Salary (Payday ${profile.payday})`,
         wallet: salaryWalletName
       });
-
-      localStorage.setItem(storageKey, currentMonthStr);
-      set((state) => ({ profile: { ...state.profile, lastProcessedPayday: currentMonthStr } }));
     }
   },
 
@@ -218,29 +223,30 @@ const useStore = create((set, get) => ({
     const currentMonthStr = `${today.getFullYear()}-${today.getMonth() + 1}`;
     const currentDay = today.getDate();
     
-    let updatedSubs = false;
-    const newSubs = [...subscriptions];
-
-    for (let i = 0; i < newSubs.length; i++) {
-      const sub = newSubs[i];
+    const subsToProcess = [];
+    const newSubs = subscriptions.map(sub => {
       if (currentDay >= sub.dayOfMonth && sub.lastProcessedMonth !== currentMonthStr) {
-        // Process subscription
-        await addTransaction({
-          amount: sub.amount,
-          category: sub.category || 'Bills',
-          note: `[Auto-Bill] ${sub.name}`,
-          wallet: sub.wallet
-        });
-        
-        newSubs[i].lastProcessedMonth = currentMonthStr;
-        updatedSubs = true;
+        subsToProcess.push(sub);
+        return { ...sub, lastProcessedMonth: currentMonthStr };
       }
+      return sub;
+    });
+
+    if (subsToProcess.length === 0) return;
+
+    // Synchronously update state to prevent concurrent runs from processing the same subs
+    set({ subscriptions: newSubs });
+
+    for (const sub of subsToProcess) {
+      await addTransaction({
+        amount: sub.amount,
+        category: sub.category || 'Bills',
+        note: `[Auto-Bill] ${sub.name}`,
+        wallet: sub.wallet
+      });
     }
 
-    if (updatedSubs) {
-      set({ subscriptions: newSubs });
-      await supabase.from('profiles').update({ subscriptions: newSubs }).eq('id', user.id);
-    }
+    await supabase.from('profiles').update({ subscriptions: newSubs }).eq('id', user.id);
   },
 
   addSubscription: async (sub) => {
