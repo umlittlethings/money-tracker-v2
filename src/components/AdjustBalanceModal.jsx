@@ -1,4 +1,5 @@
-import { useState } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect } from 'react';
 import { X, RefreshCcw } from 'lucide-react';
 import useStore from '../store/useStore';
 
@@ -6,6 +7,10 @@ const AdjustBalanceModal = ({ isOpen, onClose, currentAppBalance }) => {
   const [actualBalance, setActualBalance] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { addTransaction } = useStore();
+
+  useEffect(() => {
+    if (isOpen) setActualBalance('');
+  }, [isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

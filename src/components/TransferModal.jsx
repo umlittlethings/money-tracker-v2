@@ -1,4 +1,5 @@
-import { useState } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect } from 'react';
 import { X, ArrowRightLeft } from 'lucide-react';
 import useStore from '../store/useStore';
 
@@ -9,6 +10,15 @@ const TransferModal = ({ isOpen, onClose }) => {
   const [amount, setAmount] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setFromWallet(wallets[0]?.name || '');
+      setToWallet(wallets.length > 1 ? wallets[1]?.name : (wallets[0]?.name || ''));
+      setAmount('');
+      setError('');
+    }
+  }, [isOpen, wallets]);
 
   if (!isOpen) return null;
 

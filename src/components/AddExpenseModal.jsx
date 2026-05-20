@@ -1,4 +1,5 @@
-import { useState } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import useStore from '../store/useStore';
 
@@ -14,6 +15,16 @@ const AddExpenseModal = ({ isOpen, onClose }) => {
 
   const categories = ['Food', 'Coffee', 'Transport', 'Gaming', 'Shopping', 'Bills', 'Church', 'Other'];
   const quickAdds = [5000, 10000, 20000, 50000];
+
+  useEffect(() => {
+    if (isOpen) {
+      setWallet(wallets[0]?.name || 'Cash');
+      setAmount('');
+      setCategory('Food');
+      setNote('');
+      setError('');
+    }
+  }, [isOpen, wallets]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
