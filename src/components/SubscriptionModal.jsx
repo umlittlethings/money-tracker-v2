@@ -13,7 +13,10 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   
   const { addSubscription, deleteSubscription, wallets } = useStore();
+  
+  const savingsWallets = wallets.filter(w => w.type === 'savings');
 
+   
   useEffect(() => {
     if (isOpen) {
       if (existingSub) {
@@ -24,7 +27,7 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
       } else {
         setName('');
         setAmount('');
-        setWallet(wallets[0]?.name || 'Cash');
+        setWallet(savingsWallets[0]?.name || '');
         setDayOfMonth(1);
       }
       setShowDeleteConfirm(false);
@@ -43,7 +46,8 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
         amount: parseInt(amount),
         wallet,
         category: 'Bills',
-        dayOfMonth: parseInt(dayOfMonth)
+        dayOfMonth: parseInt(dayOfMonth),
+        lastProcessedMonth: existingSub.lastProcessedMonth
       });
     } else {
       await addSubscription({
@@ -106,15 +110,22 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-400 mb-1">Source Wallet</label>
-            <select
-              value={wallet}
-              onChange={(e) => setWallet(e.target.value)}
-              className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-sm font-medium"
-            >
-              {wallets.map(w => (
-                <option key={w.name} value={w.name}>{w.name}</option>
-              ))}
-            </select>
+            {savingsWallets.length === 0 ? (
+              <div className="bg-expense/10 text-expense p-3 rounded-xl text-sm mt-1">
+                You don't have any Savings wallets. Please create one in Settings first!
+              </div>
+            ) : (
+              <select
+                value={wallet}
+                onChange={(e) => setWallet(e.target.value)}
+                className="w-full bg-background border border-gray-800 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-colors text-sm font-medium"
+                required
+              >
+                {savingsWallets.map(w => (
+                  <option key={w.name} value={w.name}>{w.name}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div>
@@ -143,8 +154,8 @@ const SubscriptionModal = ({ isOpen, onClose, existingSub }) => {
             )}
             <button
               type="submit"
-              disabled={isLoading}
-              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+              disabled={isLoading || savingsWallets.length === 0}
+              className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold text-lg py-4 rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
               {isLoading ? (
                 <>

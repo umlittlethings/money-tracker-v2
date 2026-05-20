@@ -23,6 +23,7 @@ const useStore = create((set, get) => ({
   settings: { darkMode: true, hideBalance: false },
   isLoading: true,
   isAuthInitialized: false,
+  fetchDataPromise: null,
   
   addWallet: async (walletName, initialBalance = 0, type = 'daily') => {
     const user = get().user;
@@ -135,40 +136,54 @@ const useStore = create((set, get) => ({
     const user = get().user;
     if (!user) return;
 
-    // Fetch Profile
-    const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (profile) {
-      set({ 
-        profile: {
-          name: profile.name || '',
-          monthlyIncome: profile.monthly_income,
-          savingsTarget: profile.savings_target,
-          churchTithe: profile.church_tithe,
-          dailyBudget: profile.daily_budget,
-          payday: profile.payday,
-          streak: profile.streak,
-          totalXp: profile.total_xp,
-          level: profile.level,
-          lastProcessedPayday: localStorage.getItem(`payday_${user.id}`),
-          salaryWallet: localStorage.getItem(`salaryWallet_${user.id}`) || ''
-        },
-        wallets: (profile.wallets || [{ name: 'Cash', balance: 0, type: 'daily' }]).map(w => {
-          if (typeof w === 'string') return { name: w, balance: 0, type: 'daily' };
-          return { ...w, type: w.type || 'daily' };
-        }),
-        subscriptions: profile.subscriptions || []
-      });
+    // Deduplicate concurrent fetch requests
+    if (get().fetchDataPromise) {
+      return get().fetchDataPromise;
     }
 
-    // Fetch Transactions
-    const { data: transactions } = await supabase.from('transactions').select('*').order('date', { ascending: false });
-    if (transactions) {
-      set({ transactions: transactions.map(t => ({...t, wallet: t.wallet || 'Cash'})) });
-    }
+    const promise = (async () => {
+      // Fetch Profile
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      if (profile) {
+        set({ 
+          profile: {
+            name: profile.name || '',
+            monthlyIncome: profile.monthly_income,
+            savingsTarget: profile.savings_target,
+            churchTithe: profile.church_tithe,
+            dailyBudget: profile.daily_budget,
+            payday: profile.payday,
+            streak: profile.streak,
+            totalXp: profile.total_xp,
+            level: profile.level,
+            lastProcessedPayday: localStorage.getItem(`payday_${user.id}`),
+            salaryWallet: localStorage.getItem(`salaryWallet_${user.id}`) || ''
+          },
+          wallets: (profile.wallets || [{ name: 'Cash', balance: 0, type: 'daily' }]).map(w => {
+            if (typeof w === 'string') return { name: w, balance: 0, type: 'daily' };
+            return { ...w, type: w.type || 'daily' };
+          }),
+          subscriptions: profile.subscriptions || []
+        });
+      }
 
-    // Fetch Goals
-    const { data: goals } = await supabase.from('goals').select('*').order('target_date', { ascending: true });
-    if (goals) set({ goals: goals.map(g => ({...g, date: g.target_date})) }); // Map target_date to date for legacy UI support
+      // Fetch Transactions
+      const { data: transactions } = await supabase.from('transactions').select('*').order('date', { ascending: false });
+      if (transactions) {
+        set({ transactions: transactions.map(t => ({...t, wallet: t.wallet || 'Cash'})) });
+      }
+
+      // Fetch Goals
+      const { data: goals } = await supabase.from('goals').select('*').order('target_date', { ascending: true });
+      if (goals) set({ goals: goals.map(g => ({...g, date: g.target_date})) }); // Map target_date to date for legacy UI support
+    })();
+
+    set({ fetchDataPromise: promise });
+    try {
+      await promise;
+    } finally {
+      set({ fetchDataPromise: null });
+    }
   },
 
   signOut: async () => {
@@ -260,7 +275,7 @@ const useStore = create((set, get) => ({
       wallet: sub.wallet,
       category: sub.category || 'Bills',
       dayOfMonth: sub.dayOfMonth,
-      lastProcessedMonth: null // will be processed immediately if date passed
+      lastProcessedMonth: sub.lastProcessedMonth !== undefined ? sub.lastProcessedMonth : null // preserve if editing
     };
 
     const newSubs = [...get().subscriptions, newSub];
@@ -349,26 +364,46 @@ const useStore = create((set, get) => ({
     const user = get().user;
     if (!user) return;
 
+    const targetWalletName = transaction.wallet || 'Cash';
+    const targetWallet = get().wallets.find(w => w.name === targetWalletName);
+    const isSavings = targetWallet?.type === 'savings';
+
+    let finalCategory = transaction.category;
+    let finalNote = transaction.note || '';
+
+    // "pengurangan savings ditaruh di system logs"
+    // If spending from a savings wallet, force it as a System log so it doesn't affect daily budgets
+    if (isSavings && finalCategory !== 'System') {
+      finalCategory = 'System';
+      finalNote = `[${transaction.category}] ${finalNote}`.trim();
+    }
+
     const newTx = {
       user_id: user.id,
       amount: transaction.amount,
-      category: transaction.category,
-      note: transaction.note || '',
-      wallet: transaction.wallet || 'Cash'
+      category: finalCategory,
+      note: finalNote,
+      wallet: targetWalletName
     };
 
     const optimisticId = Math.random().toString();
     
-    // Deduct from wallet balance
-    const newWallets = get().wallets.map(w => w.name === newTx.wallet ? { ...w, balance: w.balance - newTx.amount } : w);
+    let updatedWallets = [];
 
-    set((state) => ({
-      wallets: newWallets,
-      transactions: [{ id: optimisticId, ...newTx, date: new Date().toISOString() }, ...state.transactions]
-    }));
+    set((state) => {
+      // Deduct from wallet balance atomically
+      updatedWallets = state.wallets.map(w => 
+        w.name === targetWalletName ? { ...w, balance: w.balance - newTx.amount } : w
+      );
+
+      return {
+        wallets: updatedWallets,
+        transactions: [{ id: optimisticId, ...newTx, date: new Date().toISOString() }, ...state.transactions]
+      };
+    });
 
     // Update DB
-    await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
+    await supabase.from('profiles').update({ wallets: updatedWallets }).eq('id', user.id);
     const { data, error } = await supabase.from('transactions').insert([newTx]).select().single();
     if (!error && data) {
       set((state) => ({
@@ -389,21 +424,38 @@ const useStore = create((set, get) => ({
     
     // Deduct new
     const newWalletName = updatedData.wallet || oldTx.wallet;
+    const targetWallet = get().wallets.find(w => w.name === newWalletName);
+    const isSavings = targetWallet?.type === 'savings';
+
+    let finalCategory = updatedData.category || oldTx.category;
+    let finalNote = updatedData.note !== undefined ? updatedData.note : oldTx.note;
+
+    if (isSavings && finalCategory !== 'System') {
+      finalNote = `[${finalCategory}] ${finalNote}`.trim();
+      finalCategory = 'System';
+    }
+
     const newAmount = updatedData.amount || oldTx.amount;
     newWallets = newWallets.map(w => w.name === newWalletName ? { ...w, balance: w.balance - newAmount } : w);
+
+    const finalUpdatedData = {
+      ...updatedData,
+      category: finalCategory,
+      note: finalNote
+    };
 
     // Optimistic Update
     set((state) => ({
       wallets: newWallets,
-      transactions: state.transactions.map(t => t.id === id ? { ...t, ...updatedData } : t)
+      transactions: state.transactions.map(t => t.id === id ? { ...t, ...finalUpdatedData } : t)
     }));
 
     await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user?.id);
     await supabase.from('transactions').update({
-      amount: updatedData.amount,
-      category: updatedData.category,
-      note: updatedData.note,
-      wallet: updatedData.wallet
+      amount: finalUpdatedData.amount,
+      category: finalUpdatedData.category,
+      note: finalUpdatedData.note,
+      wallet: finalUpdatedData.wallet
     }).eq('id', id);
   },
 
