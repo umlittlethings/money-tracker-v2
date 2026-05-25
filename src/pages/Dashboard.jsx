@@ -44,15 +44,21 @@ const Dashboard = () => {
     return tDate >= cycleStart && tDate <= cycleEnd && t.category !== 'System';
   });
 
+  const wallets = useStore(state => state.wallets);
+
   // Calculate today's spending
   const todaySpending = cycleTransactions
-    .filter(t => t.date.startsWith(today))
+    .filter(t => {
+      if (!t.date.startsWith(today)) return false;
+      const wallet = wallets.find(w => w.name === t.wallet);
+      return !wallet || wallet.type !== 'tap-card';
+    })
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   // Calculate total remaining balance based on DAILY wallets only
-  const wallets = useStore(state => state.wallets);
-  const dailyWallets = wallets.filter(w => w.type !== 'savings');
+  const dailyWallets = wallets.filter(w => w.type !== 'savings' && w.type !== 'tap-card');
   const savingsWallets = wallets.filter(w => w.type === 'savings');
+  const tapCardWallets = wallets.filter(w => w.type === 'tap-card');
   
   const remainingBalance = dailyWallets.reduce((acc, w) => acc + w.balance, 0);
   const safeDaily = Math.max(0, profile.dailyBudget - todaySpending);
@@ -143,6 +149,21 @@ const Dashboard = () => {
                   <div className="absolute top-0 right-0 w-16 h-16 bg-savings/10 rounded-full blur-xl -mr-8 -mt-8"></div>
                   <p className="text-sm text-gray-400 relative z-10">{w.name}</p>
                   <p className="font-bold text-lg mt-1 text-savings relative z-10">Rp {formatMoney(w.balance, hideBalance)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {tapCardWallets.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs text-gray-400 mb-2 uppercase font-bold tracking-wider">Tap Cards</p>
+            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+              {tapCardWallets.map(w => (
+                <div key={w.name} className="min-w-[140px] bg-card border border-gray-800 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-full blur-xl -mr-8 -mt-8"></div>
+                  <p className="text-sm text-gray-400 relative z-10">{w.name}</p>
+                  <p className="font-bold text-lg mt-1 text-purple-500 relative z-10">Rp {formatMoney(w.balance, hideBalance)}</p>
                 </div>
               ))}
             </div>
