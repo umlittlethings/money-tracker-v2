@@ -82,7 +82,8 @@ const Calendar = () => {
         // Calculate total expense for this day
         const dayString = format(day, 'yyyy-MM-dd');
         const dayTransactions = transactions.filter(t => t.date.startsWith(dayString) && t.category !== 'System');
-        const dayTotal = dayTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+        const dayExpenses = dayTransactions.filter(t => t.category !== 'Income');
+        const dayTotal = dayExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
         // Determine background color based on spending intensity
         let bgClass = "bg-transparent";
@@ -126,7 +127,8 @@ const Calendar = () => {
   const renderSelectedDayExpenses = () => {
     const dayString = format(selectedDate, 'yyyy-MM-dd');
     const dayTransactions = transactions.filter(t => t.date.startsWith(dayString) && t.category !== 'System');
-    const dayTotal = dayTransactions.reduce((acc, curr) => acc + curr.amount, 0);
+    const dayExpenses = dayTransactions.filter(t => t.category !== 'Income');
+    const dayTotal = dayExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
     return (
       <div>
@@ -141,7 +143,7 @@ const Calendar = () => {
 
         <div className="space-y-3">
           {dayTransactions.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-6">No expenses on this day.</p>
+            <p className="text-gray-400 text-sm text-center py-6">No transactions on this day.</p>
           ) : (
             dayTransactions.map(t => (
               <div 
@@ -166,7 +168,9 @@ const Calendar = () => {
                     {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
                   </div>
                 </div>
-                <p className="font-bold text-expense">- {formatMoney(t.amount, hideBalance)}</p>
+                <p className={`font-bold ${t.category === 'Income' ? 'text-savings' : 'text-expense'}`}>
+                  {t.category === 'Income' ? '+' : '-'} {formatMoney(Math.abs(t.amount), hideBalance)}
+                </p>
               </div>
             ))
           )}
