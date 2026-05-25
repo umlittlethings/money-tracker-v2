@@ -17,6 +17,9 @@ const Settings = () => {
   const [editingWallet, setEditingWallet] = useState(null);
   const [editBalanceValue, setEditBalanceValue] = useState('');
   
+  const [walletToDelete, setWalletToDelete] = useState(null);
+  const [showWalletDeleteConfirm, setShowWalletDeleteConfirm] = useState(false);
+  
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
   
@@ -206,7 +209,10 @@ const Settings = () => {
                   
                   {w.name !== 'Cash' && (
                     <button 
-                      onClick={() => useStore.getState().deleteWallet(w.name)} 
+                      onClick={() => {
+                        setWalletToDelete(w.name);
+                        setShowWalletDeleteConfirm(true);
+                      }} 
                       className="text-expense text-xs font-bold hover:opacity-80"
                     >
                       Delete
@@ -329,6 +335,36 @@ const Settings = () => {
         onClose={() => setIsSubOpen(false)} 
         existingSub={selectedSub} 
       />
+
+      {/* Delete Wallet Confirmation Overlay */}
+      {showWalletDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowWalletDeleteConfirm(false)} />
+          <div className="relative bg-card rounded-3xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold mb-2 text-center">Delete Wallet?</h3>
+            <p className="text-sm text-gray-400 text-center mb-6">
+              Are you sure you want to delete the wallet <span className="font-bold text-white">"{walletToDelete}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWalletDeleteConfirm(false)}
+                className="flex-1 py-3 rounded-xl font-bold bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  useStore.getState().deleteWallet(walletToDelete);
+                  setShowWalletDeleteConfirm(false);
+                }}
+                className="flex-1 py-3 rounded-xl font-bold bg-expense text-white hover:bg-expense/90 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
