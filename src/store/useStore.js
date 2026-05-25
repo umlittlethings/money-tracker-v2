@@ -201,34 +201,8 @@ const useStore = create((set, get) => ({
   // PAYDAY (Auto-Income)
   // -------------------------
   processPayday: async () => {
-    const { user, profile, addTransaction, wallets } = get();
-    if (!user || !profile.monthlyIncome || !profile.payday) return;
-
-    const today = new Date();
-    const currentMonthStr = `${today.getFullYear()}-${today.getMonth() + 1}`;
-    const currentDay = today.getDate();
-    
-    // Store in localStorage to avoid breaking if DB column doesn't exist
-    const storageKey = `payday_${user.id}`;
-    const lastProcessed = localStorage.getItem(storageKey) || profile.lastProcessedPayday;
-
-    if (currentDay >= profile.payday && lastProcessed !== currentMonthStr) {
-      // Synchronously update to prevent concurrent runs
-      localStorage.setItem(storageKey, currentMonthStr);
-      set((state) => ({ profile: { ...state.profile, lastProcessedPayday: currentMonthStr } }));
-
-      // Prioritize explicit salaryWallet, or find 'BCA', or fallback to first wallet
-      const salaryWalletName = profile.salaryWallet || 
-                              wallets.find(w => w.name.toLowerCase().includes('bca'))?.name || 
-                              wallets[0]?.name || 'Cash';
-
-      await addTransaction({
-        amount: -profile.monthlyIncome, // negative adds to balance
-        category: 'Income',
-        note: `Salary (Payday ${profile.payday})`,
-        wallet: salaryWalletName
-      });
-    }
+    // FEATURE DISABLED per user request due to cross-device duplicate bugs.
+    return;
   },
 
   // -------------------------

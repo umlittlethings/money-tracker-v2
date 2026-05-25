@@ -50,6 +50,7 @@ const Dashboard = () => {
   const todaySpending = cycleTransactions
     .filter(t => {
       if (!t.date.startsWith(today)) return false;
+      if (t.category === 'Income') return false;
       const wallet = wallets.find(w => w.name === t.wallet);
       return !wallet || wallet.type !== 'tap-card';
     })
@@ -186,10 +187,10 @@ const Dashboard = () => {
 
           {/* Recent Transactions */}
           <div className="bg-card md:bg-gray-900/30 md:border md:border-gray-800 md:p-6 rounded-3xl">
-            <h3 className="text-lg font-bold mb-4">Today's Expenses</h3>
+            <h3 className="text-lg font-bold mb-4">Today's Transactions</h3>
             <div className="space-y-3">
               {cycleTransactions.filter(t => t.date.startsWith(today)).length === 0 ? (
-                <p className="text-gray-400 text-sm text-center py-4">No expenses yet today.</p>
+                <p className="text-gray-400 text-sm text-center py-4">No transactions yet today.</p>
               ) : (
                 cycleTransactions
                   .filter(t => t.date.startsWith(today))
@@ -216,7 +217,9 @@ const Dashboard = () => {
                           {t.note && <p className="text-xs text-gray-400 mt-0.5">{t.note}</p>}
                         </div>
                       </div>
-                      <p className="font-bold text-expense">-Rp {formatMoney(t.amount, hideBalance)}</p>
+                      <p className={`font-bold ${t.category === 'Income' ? 'text-savings' : 'text-expense'}`}>
+                        {t.category === 'Income' ? '+' : '-'}Rp {formatMoney(Math.abs(t.amount), hideBalance)}
+                      </p>
                     </div>
                   ))
               )}

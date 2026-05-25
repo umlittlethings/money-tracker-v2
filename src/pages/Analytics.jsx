@@ -12,6 +12,7 @@ const Analytics = () => {
 
   const validTransactions = transactions.filter(t => {
     if (t.category === 'System') return false;
+    if (t.category === 'Income') return false;
     
     if (filterType === 'all') return true;
 
