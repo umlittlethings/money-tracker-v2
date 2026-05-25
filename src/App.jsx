@@ -41,12 +41,11 @@ function App() {
   }, [initializeAuth]);
 
   useEffect(() => {
-    if (settings.darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    document.documentElement.classList.remove('dark', 'light', 'aero');
+    if (settings.theme) {
+      document.documentElement.classList.add(settings.theme);
     }
-  }, [settings.darkMode]);
+  }, [settings.theme]);
 
   if (isLoading) {
     return (

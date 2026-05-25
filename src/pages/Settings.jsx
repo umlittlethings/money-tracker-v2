@@ -7,7 +7,7 @@ import { exportToCSV, exportToPDF, exportToExcel } from '../utils/export';
 import { formatMoney } from '../utils/format';
 
 const Settings = () => {
-  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions, wallets } = useStore();
+  const { profile, settings, setTheme, signOut, transactions, subscriptions, wallets } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAddingWallet, setIsAddingWallet] = useState(false);
@@ -68,13 +68,27 @@ const Settings = () => {
         <div className="glass-card rounded-2xl p-4">
           <h3 className="font-bold text-lg mb-4 border-b border-gray-800 pb-2">Preferences</h3>
           <div className="flex justify-between items-center">
-            <span className="text-gray-300">Dark Mode</span>
-            <button 
-              onClick={toggleDarkMode}
-              className={`w-12 h-6 rounded-full transition-colors relative ${settings.darkMode ? 'bg-primary' : 'bg-gray-600'}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${settings.darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            <span className="text-gray-300">Theme</span>
+            <div className="flex bg-gray-800 rounded-xl p-1 gap-1">
+              <button 
+                onClick={() => setTheme('light')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${settings.theme === 'light' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                Light
+              </button>
+              <button 
+                onClick={() => setTheme('dark')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${settings.theme === 'dark' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                Dark
+              </button>
+              <button 
+                onClick={() => setTheme('aero')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${settings.theme === 'aero' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                Aero
+              </button>
+            </div>
           </div>
           
           <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
