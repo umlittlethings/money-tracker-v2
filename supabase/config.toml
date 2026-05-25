@@ -1,0 +1,4 @@
+project_id = "your-supabase-project-id"
+
+[functions.email-parser]
+verify_jwt = false

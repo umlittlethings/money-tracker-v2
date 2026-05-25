@@ -7,7 +7,7 @@ import { exportToCSV, exportToPDF, exportToExcel } from '../utils/export';
 import { formatMoney } from '../utils/format';
 
 const Settings = () => {
-  const { profile, settings, toggleDarkMode, signOut, transactions, subscriptions, wallets } = useStore();
+  const { profile, settings, setTheme, signOut, transactions, subscriptions, wallets } = useStore();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isAddingWallet, setIsAddingWallet] = useState(false);
@@ -16,6 +16,9 @@ const Settings = () => {
   const [newWalletType, setNewWalletType] = useState('daily');
   const [editingWallet, setEditingWallet] = useState(null);
   const [editBalanceValue, setEditBalanceValue] = useState('');
+  
+  const [walletToDelete, setWalletToDelete] = useState(null);
+  const [showWalletDeleteConfirm, setShowWalletDeleteConfirm] = useState(false);
   
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
@@ -65,13 +68,27 @@ const Settings = () => {
         <div className="glass-card rounded-2xl p-4">
           <h3 className="font-bold text-lg mb-4 border-b border-gray-800 pb-2">Preferences</h3>
           <div className="flex justify-between items-center">
-            <span className="text-gray-300">Dark Mode</span>
-            <button 
-              onClick={toggleDarkMode}
-              className={`w-12 h-6 rounded-full transition-colors relative ${settings.darkMode ? 'bg-primary' : 'bg-gray-600'}`}
-            >
-              <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${settings.darkMode ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            <span className="text-gray-300">Theme</span>
+            <div className="flex bg-gray-800 rounded-xl p-1 gap-1">
+              <button 
+                onClick={() => setTheme('light')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${settings.theme === 'light' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                Light
+              </button>
+              <button 
+                onClick={() => setTheme('dark')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${settings.theme === 'dark' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                Dark
+              </button>
+              <button 
+                onClick={() => setTheme('aero')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${settings.theme === 'aero' ? 'bg-primary text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}
+              >
+                Aero
+              </button>
+            </div>
           </div>
           
           <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-800">
@@ -170,10 +187,12 @@ const Settings = () => {
                       className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                         w.type === 'savings' 
                           ? 'bg-savings/20 text-savings border border-savings/30 hover:bg-savings/30' 
+                          : w.type === 'tap-card'
+                          ? 'bg-purple-500/20 text-purple-500 border border-purple-500/30 hover:bg-purple-500/30'
                           : 'bg-info/20 text-info border border-info/30 hover:bg-info/30'
                       }`}
                     >
-                      {w.type === 'savings' ? 'Savings' : 'Daily Needs'}
+                      {w.type === 'savings' ? 'Savings' : w.type === 'tap-card' ? 'Tap Card' : 'Daily Needs'}
                     </button>
                   </div>
                   {editingWallet === w.name ? (
@@ -204,7 +223,10 @@ const Settings = () => {
                   
                   {w.name !== 'Cash' && (
                     <button 
-                      onClick={() => useStore.getState().deleteWallet(w.name)} 
+                      onClick={() => {
+                        setWalletToDelete(w.name);
+                        setShowWalletDeleteConfirm(true);
+                      }} 
                       className="text-expense text-xs font-bold hover:opacity-80"
                     >
                       Delete
@@ -253,6 +275,17 @@ const Settings = () => {
                     }`}
                   >
                     Savings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewWalletType('tap-card')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                      newWalletType === 'tap-card' 
+                        ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' 
+                        : 'bg-background border-gray-700 text-gray-400 hover:bg-gray-800'
+                    }`}
+                  >
+                    Tap Card
                   </button>
                 </div>
 
@@ -316,6 +349,36 @@ const Settings = () => {
         onClose={() => setIsSubOpen(false)} 
         existingSub={selectedSub} 
       />
+
+      {/* Delete Wallet Confirmation Overlay */}
+      {showWalletDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowWalletDeleteConfirm(false)} />
+          <div className="relative bg-card rounded-3xl p-6 w-full max-w-sm animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold mb-2 text-center">Delete Wallet?</h3>
+            <p className="text-sm text-gray-400 text-center mb-6">
+              Are you sure you want to delete the wallet <span className="font-bold text-white">"{walletToDelete}"</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWalletDeleteConfirm(false)}
+                className="flex-1 py-3 rounded-xl font-bold bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  useStore.getState().deleteWallet(walletToDelete);
+                  setShowWalletDeleteConfirm(false);
+                }}
+                className="flex-1 py-3 rounded-xl font-bold bg-expense text-white hover:bg-expense/90 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

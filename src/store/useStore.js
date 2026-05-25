@@ -20,7 +20,7 @@ const useStore = create((set, get) => ({
   goals: [],
   wallets: [{ name: 'Cash', balance: 0 }],
   subscriptions: [],
-  settings: { darkMode: true, hideBalance: false },
+  settings: { theme: 'dark', hideBalance: false },
   isLoading: true,
   isAuthInitialized: false,
   fetchDataPromise: null,
@@ -62,9 +62,16 @@ const useStore = create((set, get) => ({
     if (!user) return;
     
     const currentWallets = get().wallets;
-    const newWallets = currentWallets.map(w => 
-      w.name === walletName ? { ...w, type: w.type === 'savings' ? 'daily' : 'savings' } : w
-    );
+    const newWallets = currentWallets.map(w => {
+      if (w.name !== walletName) return w;
+      
+      let newType = 'daily';
+      if (w.type === 'daily' || !w.type) newType = 'savings';
+      else if (w.type === 'savings') newType = 'tap-card';
+      else if (w.type === 'tap-card') newType = 'daily';
+      
+      return { ...w, type: newType };
+    });
     set({ wallets: newWallets });
     
     await supabase.from('profiles').update({ wallets: newWallets }).eq('id', user.id);
@@ -533,7 +540,7 @@ const useStore = create((set, get) => ({
   // -------------------------
   // SETTINGS
   // -------------------------
-  toggleDarkMode: () => set((state) => ({ settings: { ...state.settings, darkMode: !state.settings.darkMode } })),
+  setTheme: (theme) => set((state) => ({ settings: { ...state.settings, theme } })),
   toggleHideBalance: () => set((state) => ({ settings: { ...state.settings, hideBalance: !state.settings.hideBalance } })),
 
 }));
