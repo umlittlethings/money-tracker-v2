@@ -170,10 +170,12 @@ const Settings = () => {
                       className={`text-[10px] px-2 py-0.5 rounded-full font-bold transition-colors ${
                         w.type === 'savings' 
                           ? 'bg-savings/20 text-savings border border-savings/30 hover:bg-savings/30' 
+                          : w.type === 'tap-card'
+                          ? 'bg-purple-500/20 text-purple-500 border border-purple-500/30 hover:bg-purple-500/30'
                           : 'bg-info/20 text-info border border-info/30 hover:bg-info/30'
                       }`}
                     >
-                      {w.type === 'savings' ? 'Savings' : 'Daily Needs'}
+                      {w.type === 'savings' ? 'Savings' : w.type === 'tap-card' ? 'Tap Card' : 'Daily Needs'}
                     </button>
                   </div>
                   {editingWallet === w.name ? (
@@ -253,6 +255,17 @@ const Settings = () => {
                     }`}
                   >
                     Savings
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewWalletType('tap-card')}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                      newWalletType === 'tap-card' 
+                        ? 'bg-purple-500/20 text-purple-500 border-purple-500/50' 
+                        : 'bg-background border-gray-700 text-gray-400 hover:bg-gray-800'
+                    }`}
+                  >
+                    Tap Card
                   </button>
                 </div>
 
