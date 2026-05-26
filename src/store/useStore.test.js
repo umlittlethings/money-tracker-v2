@@ -48,6 +48,10 @@ describe('useStore Wallet Management', () => {
 
     await useStore.getState().toggleWalletType('Cash');
     cashWallet = useStore.getState().wallets.find(w => w.name === 'Cash');
+    expect(cashWallet.type).toBe('tap-card');
+
+    await useStore.getState().toggleWalletType('Cash');
+    cashWallet = useStore.getState().wallets.find(w => w.name === 'Cash');
     expect(cashWallet.type).toBe('daily');
   });
 
